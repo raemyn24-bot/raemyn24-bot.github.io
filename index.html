@@ -18,11 +18,11 @@
   #plaque { position:absolute; left:1.2%; top:2%; background:#f3e5c3; color:#4a3520; border:3px solid #8a6b3f; border-radius:8px;
             padding:4px 14px; font-size:clamp(13px,2.4vw,21px); font-weight:700; letter-spacing:1px; box-shadow:0 3px 0 rgba(0,0,0,.35); z-index:40; }
   .sprite { position:absolute; transform:translate(-50%,-100%); pointer-events:none; }
-  .sprite img { display:block; width:100%; }
+  .sprite .fig { position:relative; width:100%; }
+  .sprite .idle { display:block; width:100%; }
+  .sprite .walk { display:none; width:100%; background-repeat:no-repeat; background-size:400% 100%; }
   .sprite .shadow { position:absolute; left:50%; bottom:-2%; width:74%; height:9%; transform:translateX(-50%);
                     background:rgba(0,0,0,.35); border-radius:50%; filter:blur(2px); }
-  .walking img { animation:bob .34s ease-in-out infinite; }
-  @keyframes bob { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-3.5%) } }
   .hint-dot { position:absolute; width:11px; height:11px; margin:-5px 0 0 -5px; border-radius:50%; border:2px solid rgba(255,236,190,.9);
               box-shadow:0 0 0 3px rgba(90,60,20,.35), inset 0 0 4px rgba(255,255,255,.6); z-index:30; pointer-events:none;
               animation:pulse 2.4s ease-in-out infinite; transition:opacity .6s; }
@@ -66,8 +66,8 @@
     <img id="bg" src="assets/room-bg.webp" alt="Rae 的像素房间">
     <div id="plaque">Rae 的房间 🍃</div>
     <div id="pianoGlow"></div>
-    <div id="boy" class="sprite"><div class="shadow"></div><img src="assets/boy.png" alt=""></div>
-    <div id="girl" class="sprite"><div class="shadow"></div><img src="assets/girl.png" alt=""></div>
+    <div id="boy" class="sprite"><div class="shadow"></div><div class="fig"><img class="idle" src="assets/boy-idle.png" alt=""><div class="walk" style="background-image:url(assets/boy-walk.png); aspect-ratio:243/460"></div></div></div>
+    <div id="girl" class="sprite"><div class="shadow"></div><div class="fig"><img class="idle" src="assets/girl-idle.png" alt=""><div class="walk" style="background-image:url(assets/girl-walk.png); aspect-ratio:279/460"></div></div></div>
     <div id="panelWrap"><div id="panel">
       <button id="panelClose">✕</button>
       <h2 id="panelTitle"></h2>
@@ -117,8 +117,8 @@ fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.155
 const isDayNow = ()=>{ const h = new Date().getHours()+new Date().getMinutes()/60; return h>=6.5 && h<18.5; };
 
 /* ---------- 场景坐标（占场景宽/高的比例） ---------- */
-const STAND = { piano:{x:.150,y:.665}, shelf:{x:.245,y:.598}, window:{x:.468,y:.578}, record:{x:.610,y:.600},
-                desk:{x:.768,y:.640}, board:{x:.838,y:.610}, cat:{x:.548,y:.735} };
+const STAND = { piano:{x:.155,y:.685}, shelf:{x:.245,y:.598}, window:{x:.468,y:.578}, record:{x:.610,y:.602},
+                desk:{x:.815,y:.668}, board:{x:.838,y:.640}, cat:{x:.492,y:.730} };
 const ZONES = [
   { id:'piano', x:.125, y:.44, rx:.088, ry:.21 }, { id:'shelf', x:.258, y:.35, rx:.088, ry:.25 },
   { id:'window', x:.550, y:.28, rx:.158, ry:.20 }, { id:'record', x:.615, y:.50, rx:.078, ry:.11 },
@@ -131,34 +131,94 @@ HINTS.forEach(([id,x,y])=>{ const d=document.createElement('div'); d.className='
 const WALK = { x0:.075, x1:.935, y0:.555, y1:.905 };
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
-/* ---------- 角色 ---------- */
-function makeChar(el, wPct, x, y){ return { el, img: el.querySelector('img'), wPct, x, y, tx:x, ty:y, moving:false, face:1, action:null, trail:[] }; }
+/* ---------- 角色与移动（帧动画 + 避障寻路） ---------- */
+const OBSTACLES = [
+  {x0:.168,y0:.40,x1:.348,y1:.578},  // 书架
+  {x0:.038,y0:.40,x1:.142,y1:.652},  // 钢琴主体
+  {x0:.132,y0:.598,x1:.222,y1:.662}, // 琴凳
+  {x0:.498,y0:.40,x1:.680,y1:.588},  // 唱片柜
+  {x0:.660,y0:.40,x1:.890,y1:.618},  // 书桌
+  {x0:.678,y0:.612,x1:.782,y1:.738}, // 椅子
+  {x0:.852,y0:.585,x1:.938,y1:.80},  // 绿植
+  {x0:.512,y0:.700,x1:.612,y1:.830}, // 蓝猫（别踩它，前方也留空）
+];
+const NODES = [[.155,.700],[.245,.665],[.360,.635],[.455,.622],[.555,.652],[.700,.775],[.830,.688],[.835,.760],
+               [.200,.800],[.400,.805],[.600,.848],[.780,.848],[.908,.848],[.475,.718],[.648,.748],
+               [.648,.640],[.810,.760]];
+const INFL = .008;
+function segHitsRect(x1,y1,x2,y2,r){
+  const dx=x2-x1, dy=y2-y1; let t0=0, t1=1;
+  const p=[-dx,dx,-dy,dy], q=[x1-(r.x0-INFL),(r.x1+INFL)-x1,y1-(r.y0-INFL),(r.y1+INFL)-y1];
+  for(let i=0;i<4;i++){ if(Math.abs(p[i])<1e-9){ if(q[i]<0) return false; }
+    else { const t=q[i]/p[i]; if(p[i]<0){ if(t>t1) return false; if(t>t0) t0=t; } else { if(t<t0) return false; if(t<t1) t1=t; } } }
+  return t0<=t1 && t1>0.001 && t0<0.999;
+}
+const segClear = (a,b)=> !OBSTACLES.some(r=> segHitsRect(a[0],a[1],b[0],b[1],r));
+const inObstacle = (x,y,pad=0)=> OBSTACLES.some(r=> x>r.x0-pad && x<r.x1+pad && y>r.y0-pad && y<r.y1+pad);
+function planPath(sx,sy,gx,gy){
+  if(inObstacle(gx,gy)){ // 目标落在家具里：就近推出
+    const outs=[[gx,gy-.03],[gx,gy+.03],[gx-.03,gy],[gx+.03,gy],[gx,gy+.06],[gx,gy-.06]];
+    const ok = outs.find(p=>!inObstacle(p[0],p[1])); if(ok){ gx=ok[0]; gy=ok[1]; }
+  }
+  if(segClear([sx,sy],[gx,gy])) return [[gx,gy]];
+  const pts = [[sx,sy], ...NODES, [gx,gy]], n = pts.length, gi = n-1;
+  const dist = new Array(n).fill(Infinity), prev = new Array(n).fill(-1), done = new Array(n).fill(false);
+  dist[0]=0;
+  for(let k=0;k<n;k++){ let u=-1, best=Infinity;
+    for(let i=0;i<n;i++) if(!done[i] && dist[i]<best){ best=dist[i]; u=i; }
+    if(u<0) break; done[u]=true; if(u===gi) break;
+    for(let v=0;v<n;v++){ if(done[v]||v===u) continue;
+      if(segClear(pts[u],pts[v])){ const w=Math.hypot(pts[u][0]-pts[v][0],pts[u][1]-pts[v][1]);
+        if(dist[u]+w<dist[v]){ dist[v]=dist[u]+w; prev[v]=u; } } }
+  }
+  if(!done[gi] && dist[gi]===Infinity) return [[gx,gy]];
+  const path=[]; let cur=gi; while(cur>0){ path.unshift(pts[cur]); cur=prev[cur]; if(cur<0) break; }
+  return path.length? path : [[gx,gy]];
+}
+function makeChar(el, wPct, x, y){
+  return { el, fig: el.querySelector('.fig'), idleEl: el.querySelector('.idle'), walkEl: el.querySelector('.walk'),
+           wPct, x, y, path:[], moving:false, face:1, action:null, frameT:Math.random()*4, speedF:0 };
+}
 const boy  = makeChar($('boy'),  5.60, .438, .705);
 const girl = makeChar($('girl'), 4.95, .502, .698);
 function placeChar(c){ const depth = .88 + (c.y-.555)*.55;
   c.el.style.left = (c.x*100)+'%'; c.el.style.top = (c.y*100)+'%';
   c.el.style.width = (c.wPct*depth)+'%'; c.el.style.zIndex = Math.round(c.y*100);
-  c.img.style.transform = `scaleX(${c.face})`; }
-function stepToward(c, dt, speed){
-  const dx = c.tx-c.x, dy = c.ty-c.y, dist = Math.hypot(dx,dy);
-  if(dist < .004){ c.moving=false; return true; }
-  const s = Math.min(dist, speed*dt); c.x += dx/dist*s; c.y += dy/dist*s;
-  if(Math.abs(dx) > .002) c.face = dx>0 ? 1 : -1;
-  c.moving = true; return false;
+  c.fig.style.transform = `scaleX(${c.face})`;
+  if(c.moving){ c.idleEl.style.display='none'; c.walkEl.style.display='block';
+    c.walkEl.style.backgroundPosition = `${Math.floor(c.frameT)%4 * (100/3)}% 0`; }
+  else { c.idleEl.style.display='block'; c.walkEl.style.display='none'; }
 }
+function followPath(c, dt, baseSpeed){
+  if(!c.path.length){ c.moving=false; c.speedF=0; return true; }
+  const [tx,ty] = c.path[0];
+  const dx = tx-c.x, dy = ty-c.y, dist = Math.hypot(dx,dy);
+  const isFinal = c.path.length===1;
+  // 起步加速、临近终点减速，消除滑行感
+  let target = 1;
+  if(isFinal && dist < .075) target = Math.max(.3, dist/.075);
+  c.speedF += (target - c.speedF) * Math.min(1, dt*7);
+  const step = baseSpeed * c.speedF * dt;
+  if(dist <= Math.max(step, .0035)){ c.x = tx; c.y = ty; c.path.shift();
+    if(!c.path.length){ c.moving=false; c.speedF=0; return true; } return false; }
+  c.x += dx/dist*step; c.y += dy/dist*step;
+  if(Math.abs(dx) > .002) c.face = dx>0 ? 1 : -1;
+  c.moving = true; c.frameT += dt * 9 * c.speedF;
+  return false;
+}
+let girlPlanT = 0;
 let lastT = performance.now();
 function loop(now){ const dt = Math.min(.05,(now-lastT)/1000); lastT = now;
-  // 男孩走向目标
-  const arrived = stepToward(boy, dt, .30);
-  boy.trail.push({x:boy.x, y:boy.y, t:now}); while(boy.trail.length && now-boy.trail[0].t > 620) boy.trail.shift();
-  boy.el.classList.toggle('walking', boy.moving);
-  if(arrived && boy.action){ const a = boy.action; boy.action = null; setTimeout(()=>doAction(a), 180); }
-  // 女孩跟随男孩 0.6 秒前的位置
-  const anchor = boy.trail[0] || boy;
-  const gx = anchor.x - .056, gy = anchor.y + .012;
-  const gd = Math.hypot(gx-girl.x, gy-girl.y);
-  if(gd > .012){ girl.tx = gx; girl.ty = gy; stepToward(girl, dt, .315); } else girl.moving = false;
-  girl.el.classList.toggle('walking', girl.moving);
+  const arrived = followPath(boy, dt, .30);
+  if(arrived && boy.action){ const a = boy.action; boy.action = null; setTimeout(()=>doAction(a), 160); }
+  // 女生：定期重新寻路到男孩身侧，不再拖着轨迹飘
+  girlPlanT -= dt;
+  const homeX = boy.x - .054*boy.face, homeY = boy.y + .014;
+  const gd = Math.hypot(homeX-girl.x, homeY-girl.y);
+  if(girlPlanT <= 0){ girlPlanT = .35;
+    if(gd > .085 || (boy.moving && gd > .045)) girl.path = planPath(girl.x, girl.y, homeX, homeY); }
+  if(gd > .018 || girl.path.length) followPath(girl, dt, .335);
+  else girl.moving = false;
   placeChar(boy); placeChar(girl);
   requestAnimationFrame(loop);
 }
@@ -172,8 +232,8 @@ scene.addEventListener('click', e=>{
   let hit = null;
   for(const z of ZONES){ if(((px-z.x)/z.rx)**2 + ((py-z.y)/z.ry)**2 <= 1){ hit = z.id; break; } }
   document.querySelectorAll('.hint-dot').forEach(d=>d.classList.add('dim'));
-  if(hit){ const s = STAND[hit]; boy.tx = s.x; boy.ty = s.y; boy.action = hit; }
-  else { boy.tx = clamp(px, WALK.x0, WALK.x1); boy.ty = clamp(py, WALK.y0, WALK.y1); boy.action = null; }
+  if(hit){ const s = STAND[hit]; boy.path = planPath(boy.x, boy.y, s.x, s.y); boy.action = hit; }
+  else { boy.path = planPath(boy.x, boy.y, clamp(px, WALK.x0, WALK.x1), clamp(py, WALK.y0, WALK.y1)); boy.action = null; }
 });
 
 /* ---------- 动作与面板 ---------- */
