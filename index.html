@@ -6,14 +6,19 @@
 <title>Rae 的房间</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  body { background:#0b1020; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
-         font-family:"PingFang SC","Microsoft YaHei",sans-serif; padding:12px 6px; }
-  #frame { background:#1a2233; border:3px solid #3a4a6b; border-radius:12px; padding:8px 10px 10px; width:min(1060px,99vw);
-           box-shadow:0 12px 44px rgba(0,0,0,.55); }
-  #bar { display:flex; align-items:center; gap:8px; padding:2px 2px 8px; }
-  .dot { width:11px; height:11px; border-radius:50%; flex:none; }
-  #addr { background:#0e1524; color:#8fa3c8; border-radius:7px; padding:3px 12px; font-size:12px; margin-left:8px; letter-spacing:.4px; white-space:nowrap; overflow:hidden; }
-  #scene { position:relative; width:100%; aspect-ratio:1993/972; border-radius:6px; overflow:hidden; background:#10182e; touch-action:manipulation; }
+  html, body { height:100%; }
+  body { background:#070b16; overflow:hidden; font-family:"PingFang SC","Microsoft YaHei",sans-serif; }
+  #stage { position:fixed; left:50%; top:50%; width:100dvw; height:100dvh; transform:translate(-50%,-50%);
+           display:flex; flex-direction:column; background:#0b1020; }
+  @media (orientation: portrait) {
+    /* 竖屏时整台旋转 90°：等效强制横屏（点按坐标在脚本里同步换算） */
+    #stage { width:100dvh; height:100dvw; transform:translate(-50%,-50%) rotate(90deg); }
+  }
+  #sceneWrap { flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:8px 8px 0; }
+  #scene { position:relative; border-radius:6px; overflow:hidden; background:#10182e; touch-action:manipulation; flex:none; }
+  #fsBtn { position:absolute; right:12px; top:12px; z-index:300; width:38px; height:38px; border-radius:50%; border:2px solid rgba(255,236,190,.5);
+           background:rgba(14,20,38,.55); color:#ffe9bb; font-size:19px; line-height:1; cursor:pointer; }
+  #credit { position:absolute; left:12px; bottom:76px; z-index:50; color:rgba(198,212,238,.55); font-size:11px; pointer-events:none; letter-spacing:.3px; }
   #bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; user-select:none; -webkit-user-drag:none; }
   #plaque { position:absolute; left:1.2%; top:2%; background:#f3e5c3; color:#4a3520; border:3px solid #8a6b3f; border-radius:8px;
             padding:4px 14px; font-size:clamp(13px,2.4vw,21px); font-weight:700; letter-spacing:1px; box-shadow:0 3px 0 rgba(0,0,0,.35); z-index:40; }
@@ -37,8 +42,8 @@
   .fnote { position:absolute; z-index:35; color:#ffd98a; font-size:clamp(13px,2.2vw,21px); pointer-events:none;
            text-shadow:0 0 6px rgba(255,190,80,.8); animation:floatUp 3.4s ease-out forwards; }
   @keyframes floatUp { 0%{ transform:translate(0,0) rotate(-6deg); opacity:0 } 12%{ opacity:1 } 100%{ transform:translate(var(--dx,14px),-120px) rotate(10deg); opacity:0 } }
-  #dialog { margin-top:10px; background:#f7ecd2; border:3px solid #8a6b3f; border-radius:10px; color:#43331d;
-            padding:10px 16px; font-size:clamp(13px,2.2vw,16.5px); display:flex; align-items:center; gap:10px; min-height:50px; }
+  #dialog { margin:8px; background:#f7ecd2; border:3px solid #8a6b3f; border-radius:10px; color:#43331d;
+            padding:9px 16px; font-size:clamp(13px,2.2vw,16.5px); display:flex; align-items:center; gap:10px; min-height:50px; flex:none; }
   #dialog .star { color:#d9a441; font-size:19px; flex:none; }
   #panelWrap { position:absolute; inset:0; background:rgba(8,12,24,.58); display:none; align-items:center; justify-content:center; z-index:200; }
   #panel { background:#fdf6e0; color:#43331d; border:3px solid #8a6b3f; border-radius:12px; width:min(540px,94%); max-height:92%;
@@ -58,12 +63,11 @@
   .gb-form input, .gb-form textarea { border:2px solid #cbb27f; border-radius:8px; padding:8px 10px; font-size:14px; font-family:inherit; background:#fffdf4; }
   .gb-form button { background:#8a6b3f; color:#fff8e7; border:none; border-radius:8px; padding:9px; font-size:15px; font-weight:700; cursor:pointer; }
   .hint { color:#97835c; font-size:12px; margin-top:6px; }
-  #foot { color:#5b6c8f; font-size:12px; margin-top:10px; text-align:center; padding:0 10px; }
 </style>
 </head>
 <body>
-<div id="frame">
-  <div id="bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span id="addr">🔒 raemyn24-bot.github.io</span></div>
+<div id="stage">
+  <div id="sceneWrap">
   <div id="scene">
     <img id="bg" src="assets/room-bg.webp" alt="Rae 的像素房间">
     <div id="plaque">Rae 的房间 🍃</div>
@@ -76,9 +80,11 @@
       <div class="body" id="panelBody"></div>
     </div></div>
   </div>
+  </div>
   <div id="dialog"><span class="star">★</span><span id="dialogText"></span></div>
+  <button id="fsBtn" title="全屏 / 横屏">⛶</button>
+  <div id="credit">BGM: Erik Satie《Gymnopédie No.1》· Musopen 公共领域录音</div>
 </div>
-<div id="foot"><span id="rotateTip" style="display:none">📱 横过手机，房间会更大哦 · </span>点一点房间里的东西，小人会自己走过去 · BGM: Erik Satie《Gymnopédie No.1》(Musopen 公共领域录音）</div>
 <audio id="bgm" loop preload="auto" src="assets/gymnopedie.mp3"></audio>
 
 <script>
@@ -104,8 +110,27 @@ const CONFIG = {
 
 const $ = id=>document.getElementById(id);
 const scene = $('scene'), dialogText = $('dialogText');
-dialogText.textContent = CONFIG.idleDialog;
-if (matchMedia('(orientation: portrait) and (max-width: 640px)').matches) $('rotateTip').style.display = 'inline';
+/* 舞台尺寸适配：场景按 1993:972 装进舞台（扣掉对话框高度） */
+function fit(){ const st = $('stage'); const W = st.clientWidth, H = st.clientHeight;
+  const availH = H - $('dialog').offsetHeight - 26;
+  let w = W - 16, h = w * 972/1993;
+  if (h > availH) { h = availH; w = h * 1993/972; }
+  scene.style.width = w + 'px'; scene.style.height = h + 'px'; }
+addEventListener('resize', fit);
+if (screen.orientation) screen.orientation.addEventListener('change', ()=>setTimeout(fit, 80));
+addEventListener('load', ()=>{ fit(); setTimeout(fit, 300); });
+$('fsBtn').addEventListener('click', async ()=>{
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else { const el = document.documentElement;
+      if (el.requestFullscreen) await el.requestFullscreen({ navigationUI:'hide' }).catch(()=>el.requestFullscreen());
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      try { await screen.orientation.lock('landscape'); } catch(e){}
+    }
+  } catch(e){}
+  setTimeout(fit, 350);
+});
+dialogText.textContent = CONFIG.idleDialog; fit();
 
 /* ---------- 杭州天气（Open-Meteo） ---------- */
 const WMO = {0:'晴',1:'晴间多云',2:'多云',3:'阴',45:'雾',48:'雾',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',80:'阵雨',81:'阵雨',82:'暴雨阵雨',85:'阵雪',86:'阵雪',95:'雷阵雨',96:'雷阵雨',99:'雷阵雨'};
@@ -233,7 +258,10 @@ requestAnimationFrame(loop);
 scene.addEventListener('click', e=>{
   if(e.target.closest('#panelWrap') || panelOpen) return;
   const r = scene.getBoundingClientRect();
-  const px = (e.clientX-r.left)/r.width, py = (e.clientY-r.top)/r.height;
+  const vx = (e.clientX-r.left)/r.width, vy = (e.clientY-r.top)/r.height;
+  /* 竖屏时舞台被旋转了 90°，把视觉坐标换回场景坐标 */
+  const rotated = matchMedia('(orientation: portrait)').matches;
+  const px = rotated ? vy : vx, py = rotated ? 1 - vx : vy;
   let hit = null;
   for(const z of ZONES){ if(((px-z.x)/z.rx)**2 + ((py-z.y)/z.ry)**2 <= 1){ hit = z.id; break; } }
   document.querySelectorAll('.hint-dot').forEach(d=>d.classList.add('dim'));
