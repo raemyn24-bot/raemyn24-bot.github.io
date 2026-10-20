@@ -49,6 +49,19 @@
   .fnote { position:absolute; z-index:35; color:#ffd98a; font-size:clamp(13px,2.2vw,21px); pointer-events:none;
            text-shadow:0 0 6px rgba(255,190,80,.8); animation:floatUp 3.4s ease-out forwards; }
   @keyframes floatUp { 0%{ transform:translate(0,0) rotate(-6deg); opacity:0 } 12%{ opacity:1 } 100%{ transform:translate(var(--dx,14px),-120px) rotate(10deg); opacity:0 } }
+  /* 猫：独立图层（身体 + 尾巴分开），尾巴每隔几秒自己摇一下 */
+  #cat { position:absolute; left:57.6%; top:82.4%; width:10.7%; aspect-ratio:1080/384; transform:translate(-50%,-100%);
+         z-index:82; pointer-events:none; }
+  #cat::before { content:""; position:absolute; left:5%; right:3%; bottom:-1.5%; height:11%; z-index:0;
+         background:radial-gradient(ellipse at center, rgba(0,0,0,.40), rgba(0,0,0,0) 70%); }
+  #catBody { position:absolute; left:0; top:0; width:82.22%; height:100%; z-index:2;
+         animation:catbreath 3.9s ease-in-out infinite alternate; transform-origin:50% 100%; }
+  #catTail { position:absolute; left:79.81%; top:0; width:20.19%; height:100%; z-index:1;
+         transform-origin:0% 70.6%; animation:tailwag 6.4s ease-in-out infinite; }
+  @keyframes tailwag { 0%,55% { transform:rotate(0deg) } 63% { transform:rotate(-4.2deg) } 71% { transform:rotate(2.2deg) }
+         79% { transform:rotate(-3deg) } 87%,100% { transform:rotate(0deg) } }
+  @keyframes catbreath { from { transform:scaleY(1) } to { transform:scaleY(1.014) } }
+  @media (prefers-reduced-motion: reduce) { #catTail, #catBody { animation:none; } }
   #dialog { margin:8px; background:#f7ecd2; border:3px solid #8a6b3f; border-radius:10px; color:#43331d;
             padding:9px 16px; font-size:clamp(13px,2.2vw,16.5px); display:flex; align-items:center; gap:10px; min-height:50px; flex:none; }
   #dialog .star { color:#d9a441; font-size:19px; flex:none; }
@@ -76,11 +89,12 @@
 <div id="stage">
   <div id="sceneWrap">
   <div id="scene">
-    <img id="bg" src="assets/room-bg.webp?v=5" alt="Rae 的像素房间">
+    <img id="bg" src="assets/room-bg.webp?v=6" alt="Rae 的像素房间">
     <div id="pianoGlow"></div>
     <div id="vinyl"><div class="face"></div></div>
     <div id="boy" class="sprite"><div class="shadow"></div><div class="fig"><img class="idle" src="assets/boy-idle.png" alt=""><div class="walk" style="background-image:url(assets/boy-walk.png); aspect-ratio:243/460"></div></div></div>
     <div id="girl" class="sprite"><div class="shadow"></div><div class="fig"><img class="idle" src="assets/girl-idle.png" alt=""><div class="walk" style="background-image:url(assets/girl-walk.png); aspect-ratio:279/460"></div></div></div>
+    <div id="cat"><img id="catTail" src="assets/cat-tail.png" alt=""><img id="catBody" src="assets/cat-body.png" alt=""></div>
     <div id="panelWrap"><div id="panel">
       <button id="panelClose">✕</button>
       <h2 id="panelTitle"></h2>
@@ -158,7 +172,7 @@ const ZONES = [
   { id:'piano', x:.125, y:.44, rx:.088, ry:.21 }, { id:'shelf', x:.258, y:.35, rx:.088, ry:.25 },
   { id:'window', x:.550, y:.28, rx:.158, ry:.20 }, { id:'record', x:.615, y:.50, rx:.078, ry:.11 },
   { id:'window', x:.772, y:.285, rx:.038, ry:.08 }, { id:'desk', x:.797, y:.52, rx:.108, ry:.16 },
-  { id:'board', x:.880, y:.375, rx:.078, ry:.17 }, { id:'cat', x:.576, y:.790, rx:.048, ry:.045 },
+  { id:'board', x:.880, y:.375, rx:.078, ry:.17 }, { id:'cat', x:.576, y:.788, rx:.064, ry:.044 },
 ];
 const HINTS = [ ['piano',.148,.330], ['shelf',.262,.185], ['window',.550,.478], ['record',.617,.428], ['desk',.800,.415], ['board',.880,.512] ];
 HINTS.forEach(([id,x,y])=>{ const d=document.createElement('div'); d.className='hint-dot'; d.dataset.id=id;
@@ -175,10 +189,10 @@ const OBSTACLES = [ // 全部按底图实测的家具落地边（2026-10-21 逐�
   {x0:.660,y0:.40,x1:.900,y1:.790},  // 书桌（前沿斜线，右腿落到 .782）
   {x0:.680,y0:.560,x1:.840,y1:.805}, // 椅子（轮子落到 .80）
   {x0:.890,y0:.520,x1:.968,y1:.755}, // 绿植（花盆落到 .748）
-  {x0:.540,y0:.752,x1:.612,y1:.828}, // 蓝猫（已缩小，别踩它）
+  {x0:.518,y0:.742,x1:.634,y1:.830}, // 蓝猫（独立 DOM 图层，别踩它）
 ];
 const NODES = [[.190,.758],[.255,.668],[.368,.635],[.455,.622],[.560,.718],[.700,.835],[.200,.800],
-               [.400,.805],[.600,.848],[.780,.848],[.908,.848],[.475,.718],[.636,.762],[.615,.720],
+               [.400,.805],[.600,.848],[.780,.848],[.908,.848],[.475,.718],[.648,.758],[.615,.720],
                [.655,.855],[.860,.860],[.838,.848]];
 const INFL = .010;
 function segHitsRect(x1,y1,x2,y2,r){
