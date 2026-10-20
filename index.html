@@ -21,8 +21,10 @@
   .sprite .fig { position:relative; width:100%; }
   .sprite .idle { display:block; width:100%; }
   .sprite .walk { display:none; width:100%; background-repeat:no-repeat; background-size:400% 100%; }
-  .sprite .shadow { position:absolute; left:50%; bottom:-2%; width:74%; height:9%; transform:translateX(-50%);
-                    background:rgba(0,0,0,.35); border-radius:50%; filter:blur(2px); }
+  .sprite .shadow { position:absolute; left:50%; bottom:-4%; width:88%; height:12%; transform:translateX(-50%); border-radius:50%;
+                    background:radial-gradient(ellipse at center, rgba(8,6,12,.55) 0%, rgba(8,6,12,.30) 55%, rgba(8,6,12,0) 72%); }
+  .sprite .shadow::after { content:""; position:absolute; left:-40%; top:35%; width:130%; height:160%; border-radius:50%;
+                    background:radial-gradient(ellipse at center, rgba(18,11,4,.30), rgba(18,11,4,0) 70%); transform:skewX(-22deg); filter:blur(3px); }
   .hint-dot { position:absolute; width:11px; height:11px; margin:-5px 0 0 -5px; border-radius:50%; border:2px solid rgba(255,236,190,.9);
               box-shadow:0 0 0 3px rgba(90,60,20,.35), inset 0 0 4px rgba(255,255,255,.6); z-index:30; pointer-events:none;
               animation:pulse 2.4s ease-in-out infinite; transition:opacity .6s; }
@@ -185,6 +187,9 @@ function placeChar(c){ const depth = .88 + (c.y-.555)*.55;
   c.el.style.left = (c.x*100)+'%'; c.el.style.top = (c.y*100)+'%';
   c.el.style.width = (c.wPct*depth)+'%'; c.el.style.zIndex = Math.round(c.y*100);
   c.fig.style.transform = `scaleX(${c.face})`;
+  const lamp = Math.max(0, 1 - Math.hypot(c.x-.80, (c.y-.62)*1.6)/.50);
+  const fstr = `brightness(${(.90+.14*lamp).toFixed(3)}) sepia(${(.08+.16*lamp).toFixed(3)}) saturate(${(.95+.04*lamp).toFixed(3)})`;
+  if(c._f !== fstr){ c.fig.style.filter = fstr; c._f = fstr; }
   if(c.moving){ c.idleEl.style.display='none'; c.walkEl.style.display='block';
     c.walkEl.style.backgroundPosition = `${Math.floor(c.frameT)%4 * (100/3)}% 0`; }
   else { c.idleEl.style.display='block'; c.walkEl.style.display='none'; }
