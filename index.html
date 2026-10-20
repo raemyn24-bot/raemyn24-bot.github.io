@@ -19,6 +19,8 @@
   #fsBtn { position:absolute; right:12px; top:12px; z-index:300; width:38px; height:38px; border-radius:50%; border:2px solid rgba(255,236,190,.5);
            background:rgba(14,20,38,.55); color:#ffe9bb; font-size:19px; line-height:1; cursor:pointer; }
   #credit { position:absolute; left:12px; bottom:76px; z-index:50; color:rgba(198,212,238,.55); font-size:11px; pointer-events:none; letter-spacing:.3px; }
+  #scene, #dialog { user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
+  img { -webkit-user-drag:none; }
   #bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; user-select:none; -webkit-user-drag:none; }
   .sprite { position:absolute; transform:translate(-50%,-100%); pointer-events:none; }
   .sprite .fig { position:relative; width:100%; }
@@ -67,7 +69,7 @@
 <div id="stage">
   <div id="sceneWrap">
   <div id="scene">
-    <img id="bg" src="assets/room-bg.webp?v=3" alt="Rae 的像素房间">
+    <img id="bg" src="assets/room-bg.webp?v=4" alt="Rae 的像素房间">
     <div id="pianoGlow"></div>
     <div id="boy" class="sprite"><div class="shadow"></div><div class="fig"><img class="idle" src="assets/boy-idle.png" alt=""><div class="walk" style="background-image:url(assets/boy-walk.png); aspect-ratio:243/460"></div></div></div>
     <div id="girl" class="sprite"><div class="shadow"></div><div class="fig"><img class="idle" src="assets/girl-idle.png" alt=""><div class="walk" style="background-image:url(assets/girl-walk.png); aspect-ratio:279/460"></div></div></div>
@@ -80,7 +82,7 @@
   </div>
   <div id="dialog"><span class="star">★</span><span id="dialogText"></span></div>
   <button id="fsBtn" title="全屏 / 横屏">⛶</button>
-  <div id="credit">BGM: Erik Satie《Gymnopédie No.1》· Musopen 公共领域录音</div>
+  <div id="credit">BGM - Erik Satie - Gymnopédies No.1</div>
 </div>
 <audio id="bgm" loop preload="auto" src="assets/gymnopedie.mp3"></audio>
 
@@ -105,6 +107,8 @@ const CONFIG = {
 };
 /* ========================================================= */
 
+document.addEventListener('contextmenu', e=>{ if(!e.target.closest('input, textarea')) e.preventDefault(); });
+document.addEventListener('dragstart', e=>{ if(e.target.tagName === 'IMG') e.preventDefault(); });
 const $ = id=>document.getElementById(id);
 const scene = $('scene'), dialogText = $('dialogText');
 /* 舞台尺寸适配：场景按 1993:972 装进舞台（扣掉对话框高度） */
@@ -141,13 +145,13 @@ fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.155
 const isDayNow = ()=>{ const h = new Date().getHours()+new Date().getMinutes()/60; return h>=6.5 && h<18.5; };
 
 /* ---------- 场景坐标（占场景宽/高的比例） ---------- */
-const STAND = { piano:{x:.155,y:.685}, shelf:{x:.245,y:.612}, window:{x:.468,y:.578}, record:{x:.610,y:.618},
-                desk:{x:.800,y:.722}, board:{x:.822,y:.800}, cat:{x:.492,y:.730} };
+const STAND = { piano:{x:.190,y:.742}, shelf:{x:.300,y:.618}, window:{x:.468,y:.578}, record:{x:.590,y:.722},
+                desk:{x:.845,y:.838}, board:{x:.878,y:.812}, cat:{x:.492,y:.800} };
 const ZONES = [
   { id:'piano', x:.125, y:.44, rx:.088, ry:.21 }, { id:'shelf', x:.258, y:.35, rx:.088, ry:.25 },
   { id:'window', x:.550, y:.28, rx:.158, ry:.20 }, { id:'record', x:.615, y:.50, rx:.078, ry:.11 },
   { id:'window', x:.772, y:.285, rx:.038, ry:.08 }, { id:'desk', x:.797, y:.52, rx:.108, ry:.16 },
-  { id:'board', x:.880, y:.375, rx:.078, ry:.17 }, { id:'cat', x:.562, y:.752, rx:.052, ry:.052 },
+  { id:'board', x:.880, y:.375, rx:.078, ry:.17 }, { id:'cat', x:.576, y:.790, rx:.048, ry:.045 },
 ];
 const HINTS = [ ['piano',.148,.330], ['shelf',.262,.185], ['window',.550,.478], ['record',.617,.428], ['desk',.800,.415], ['board',.880,.512] ];
 HINTS.forEach(([id,x,y])=>{ const d=document.createElement('div'); d.className='hint-dot'; d.dataset.id=id;
@@ -156,19 +160,19 @@ const WALK = { x0:.075, x1:.935, y0:.555, y1:.905 };
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 /* ---------- 角色与移动（帧动画 + 避障寻路） ---------- */
-const OBSTACLES = [
-  {x0:.168,y0:.40,x1:.348,y1:.578},  // 书架
-  {x0:.038,y0:.40,x1:.142,y1:.652},  // 钢琴主体
-  {x0:.132,y0:.598,x1:.222,y1:.662}, // 琴凳
-  {x0:.498,y0:.40,x1:.680,y1:.588},  // 唱片柜
-  {x0:.655,y0:.40,x1:.895,y1:.685},  // 书桌（按画面占地：前沿到 .685）
-  {x0:.660,y0:.575,x1:.775,y1:.795}, // 椅子
-  {x0:.845,y0:.56,x1:.945,y1:.815},  // 绿植
-  {x0:.512,y0:.700,x1:.612,y1:.830}, // 蓝猫（别踩它，前方也留空）
+const OBSTACLES = [ // 全部按底图实测的家具落地边（2026-10-21 逐块放大测量）
+  {x0:.238,y0:.20,x1:.438,y1:.575},  // 书架
+  {x0:.034,y0:.40,x1:.238,y1:.700},  // 钢琴主体（左侧板落到 .700）
+  {x0:.138,y0:.570,x1:.238,y1:.722}, // 琴凳（凳腿落到 .722）
+  {x0:.500,y0:.40,x1:.680,y1:.695},  // 唱片柜（柜身前沿斜线，最低 .695）
+  {x0:.660,y0:.40,x1:.900,y1:.790},  // 书桌（前沿斜线，右腿落到 .782）
+  {x0:.680,y0:.560,x1:.840,y1:.805}, // 椅子（轮子落到 .80）
+  {x0:.890,y0:.520,x1:.968,y1:.755}, // 绿植（花盆落到 .748）
+  {x0:.540,y0:.752,x1:.612,y1:.828}, // 蓝猫（已缩小，别踩它）
 ];
-const NODES = [[.155,.700],[.245,.665],[.368,.635],[.455,.622],[.555,.652],[.700,.820],[.820,.715],
-               [.200,.800],[.400,.805],[.600,.848],[.780,.848],[.908,.848],[.475,.718],[.636,.762],
-               [.630,.640],[.810,.760],[.655,.855],[.860,.860],[.838,.848]];
+const NODES = [[.190,.758],[.255,.668],[.368,.635],[.455,.622],[.560,.718],[.700,.835],[.200,.800],
+               [.400,.805],[.600,.848],[.780,.848],[.908,.848],[.475,.718],[.636,.762],[.615,.720],
+               [.655,.855],[.860,.860],[.838,.848]];
 const INFL = .010;
 function segHitsRect(x1,y1,x2,y2,r){
   const dx=x2-x1, dy=y2-y1; let t0=0, t1=1;
@@ -211,8 +215,8 @@ function makeChar(el, wPct, x, y){
   return { el, fig: el.querySelector('.fig'), idleEl: el.querySelector('.idle'), walkEl: el.querySelector('.walk'),
            wPct, x, y, path:[], moving:false, face:1, action:null, frameT:Math.random()*4, speedF:0 };
 }
-const boy  = makeChar($('boy'),  5.60, .438, .705);
-const girl = makeChar($('girl'), 4.95, .502, .698);
+const boy  = makeChar($('boy'),  5.60, .435, .718);
+const girl = makeChar($('girl'), 4.95, .492, .714);
 function placeChar(c){ const depth = .88 + (c.y-.555)*.55;
   c.el.style.left = (c.x*100)+'%'; c.el.style.top = (c.y*100)+'%';
   c.el.style.width = (c.wPct*depth)+'%'; c.el.style.zIndex = Math.round(c.y*100);
