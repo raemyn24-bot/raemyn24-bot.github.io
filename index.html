@@ -20,8 +20,6 @@
            background:rgba(14,20,38,.55); color:#ffe9bb; font-size:19px; line-height:1; cursor:pointer; }
   #credit { position:absolute; left:12px; bottom:76px; z-index:50; color:rgba(198,212,238,.55); font-size:11px; pointer-events:none; letter-spacing:.3px; }
   #bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; user-select:none; -webkit-user-drag:none; }
-  #plaque { position:absolute; left:1.2%; top:2%; background:#f3e5c3; color:#4a3520; border:3px solid #8a6b3f; border-radius:8px;
-            padding:4px 14px; font-size:clamp(13px,2.4vw,21px); font-weight:700; letter-spacing:1px; box-shadow:0 3px 0 rgba(0,0,0,.35); z-index:40; }
   .sprite { position:absolute; transform:translate(-50%,-100%); pointer-events:none; }
   .sprite .fig { position:relative; width:100%; }
   .sprite .idle { display:block; width:100%; }
@@ -69,8 +67,7 @@
 <div id="stage">
   <div id="sceneWrap">
   <div id="scene">
-    <img id="bg" src="assets/room-bg.webp" alt="Rae 的像素房间">
-    <div id="plaque">Rae 的房间 🍃</div>
+    <img id="bg" src="assets/room-bg.webp?v=3" alt="Rae 的像素房间">
     <div id="pianoGlow"></div>
     <div id="boy" class="sprite"><div class="shadow"></div><div class="fig"><img class="idle" src="assets/boy-idle.png" alt=""><div class="walk" style="background-image:url(assets/boy-walk.png); aspect-ratio:243/460"></div></div></div>
     <div id="girl" class="sprite"><div class="shadow"></div><div class="fig"><img class="idle" src="assets/girl-idle.png" alt=""><div class="walk" style="background-image:url(assets/girl-walk.png); aspect-ratio:279/460"></div></div></div>
@@ -144,8 +141,8 @@ fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.155
 const isDayNow = ()=>{ const h = new Date().getHours()+new Date().getMinutes()/60; return h>=6.5 && h<18.5; };
 
 /* ---------- 场景坐标（占场景宽/高的比例） ---------- */
-const STAND = { piano:{x:.155,y:.685}, shelf:{x:.245,y:.598}, window:{x:.468,y:.578}, record:{x:.610,y:.602},
-                desk:{x:.815,y:.668}, board:{x:.838,y:.640}, cat:{x:.492,y:.730} };
+const STAND = { piano:{x:.155,y:.685}, shelf:{x:.245,y:.612}, window:{x:.468,y:.578}, record:{x:.610,y:.618},
+                desk:{x:.800,y:.722}, board:{x:.822,y:.800}, cat:{x:.492,y:.730} };
 const ZONES = [
   { id:'piano', x:.125, y:.44, rx:.088, ry:.21 }, { id:'shelf', x:.258, y:.35, rx:.088, ry:.25 },
   { id:'window', x:.550, y:.28, rx:.158, ry:.20 }, { id:'record', x:.615, y:.50, rx:.078, ry:.11 },
@@ -164,15 +161,15 @@ const OBSTACLES = [
   {x0:.038,y0:.40,x1:.142,y1:.652},  // 钢琴主体
   {x0:.132,y0:.598,x1:.222,y1:.662}, // 琴凳
   {x0:.498,y0:.40,x1:.680,y1:.588},  // 唱片柜
-  {x0:.660,y0:.40,x1:.890,y1:.618},  // 书桌
-  {x0:.678,y0:.612,x1:.782,y1:.738}, // 椅子
-  {x0:.852,y0:.585,x1:.938,y1:.80},  // 绿植
+  {x0:.655,y0:.40,x1:.895,y1:.685},  // 书桌（按画面占地：前沿到 .685）
+  {x0:.660,y0:.575,x1:.775,y1:.795}, // 椅子
+  {x0:.845,y0:.56,x1:.945,y1:.815},  // 绿植
   {x0:.512,y0:.700,x1:.612,y1:.830}, // 蓝猫（别踩它，前方也留空）
 ];
-const NODES = [[.155,.700],[.245,.665],[.360,.635],[.455,.622],[.555,.652],[.700,.775],[.830,.688],[.835,.760],
-               [.200,.800],[.400,.805],[.600,.848],[.780,.848],[.908,.848],[.475,.718],[.648,.748],
-               [.648,.640],[.810,.760]];
-const INFL = .008;
+const NODES = [[.155,.700],[.245,.665],[.368,.635],[.455,.622],[.555,.652],[.700,.820],[.820,.715],
+               [.200,.800],[.400,.805],[.600,.848],[.780,.848],[.908,.848],[.475,.718],[.636,.762],
+               [.630,.640],[.810,.760],[.655,.855],[.860,.860],[.838,.848]];
+const INFL = .010;
 function segHitsRect(x1,y1,x2,y2,r){
   const dx=x2-x1, dy=y2-y1; let t0=0, t1=1;
   const p=[-dx,dx,-dy,dy], q=[x1-(r.x0-INFL),(r.x1+INFL)-x1,y1-(r.y0-INFL),(r.y1+INFL)-y1];
@@ -182,12 +179,19 @@ function segHitsRect(x1,y1,x2,y2,r){
 }
 const segClear = (a,b)=> !OBSTACLES.some(r=> segHitsRect(a[0],a[1],b[0],b[1],r));
 const inObstacle = (x,y,pad=0)=> OBSTACLES.some(r=> x>r.x0-pad && x<r.x1+pad && y>r.y0-pad && y<r.y1+pad);
+function pushOut(x,y){ // 落在家具里时，环形向外找最近的空地
+  if(!inObstacle(x,y,.004)) return [x,y];
+  for(const r of [.025,.05,.08,.11,.15]){
+    for(let k=0;k<8;k++){ const a = k*Math.PI/4, px = x+Math.cos(a)*r, py = y+Math.sin(a)*r;
+      if(!inObstacle(px,py,.004)) return [px,py]; } }
+  return [x,y];
+}
 function planPath(sx,sy,gx,gy){
-  if(inObstacle(gx,gy)){ // 目标落在家具里：就近推出
-    const outs=[[gx,gy-.03],[gx,gy+.03],[gx-.03,gy],[gx+.03,gy],[gx,gy+.06],[gx,gy-.06]];
-    const ok = outs.find(p=>!inObstacle(p[0],p[1])); if(ok){ gx=ok[0]; gy=ok[1]; }
-  }
-  if(segClear([sx,sy],[gx,gy])) return [[gx,gy]];
+  [gx,gy] = pushOut(gx,gy);
+  const _sx = sx, _sy = sy;
+  [sx,sy] = pushOut(sx,sy);
+  const startPushed = (sx !== _sx || sy !== _sy);
+  if(segClear([sx,sy],[gx,gy])) return (startPushed && Math.hypot(gx-sx,gy-sy) > .001) ? [[sx,sy],[gx,gy]] : [[gx,gy]];
   const pts = [[sx,sy], ...NODES, [gx,gy]], n = pts.length, gi = n-1;
   const dist = new Array(n).fill(Infinity), prev = new Array(n).fill(-1), done = new Array(n).fill(false);
   dist[0]=0;
@@ -198,9 +202,10 @@ function planPath(sx,sy,gx,gy){
       if(segClear(pts[u],pts[v])){ const w=Math.hypot(pts[u][0]-pts[v][0],pts[u][1]-pts[v][1]);
         if(dist[u]+w<dist[v]){ dist[v]=dist[u]+w; prev[v]=u; } } }
   }
-  if(!done[gi] && dist[gi]===Infinity) return [[gx,gy]];
+  if(!done[gi] && dist[gi]===Infinity) return []; // 无路可走：原地不动，不直线硬闯
   const path=[]; let cur=gi; while(cur>0){ path.unshift(pts[cur]); cur=prev[cur]; if(cur<0) break; }
-  return path.length? path : [[gx,gy]];
+  if(startPushed && path.length) path.unshift([sx,sy]); // 起点在家具里时，先走出到推出点
+  return path;
 }
 function makeChar(el, wPct, x, y){
   return { el, fig: el.querySelector('.fig'), idleEl: el.querySelector('.idle'), walkEl: el.querySelector('.walk'),
@@ -243,7 +248,10 @@ function loop(now){ const dt = Math.min(.05,(now-lastT)/1000); lastT = now;
   if(arrived && boy.action){ const a = boy.action; boy.action = null; setTimeout(()=>doAction(a), 160); }
   // 女生：定期重新寻路到男孩身侧，不再拖着轨迹飘
   girlPlanT -= dt;
-  const homeX = boy.x - .054*boy.face, homeY = boy.y + .014;
+  const homeCands = [[boy.x-.054*boy.face, boy.y+.014],[boy.x+.054*boy.face, boy.y+.014],
+                     [boy.x-.054*boy.face, boy.y+.062],[boy.x+.054*boy.face, boy.y+.062],[boy.x, boy.y+.07]];
+  const home = homeCands.find(p=>!inObstacle(p[0],p[1],.01)) || homeCands[0];
+  const homeX = home[0], homeY = home[1];
   const gd = Math.hypot(homeX-girl.x, homeY-girl.y);
   if(girlPlanT <= 0){ girlPlanT = .35;
     if(gd > .085 || (boy.moving && gd > .045)) girl.path = planPath(girl.x, girl.y, homeX, homeY); }
