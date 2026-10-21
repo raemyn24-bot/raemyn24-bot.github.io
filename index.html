@@ -31,10 +31,10 @@
 <div id="stage">
 <svg id="room" viewBox="0 0 1993 972" preserveAspectRatio="xMidYMid meet">
   <image href="assets/plate-night.webp" x="0" y="0" width="1993" height="972"/>
-  <g id="vinyl"><circle cx="1110" cy="535" r="52" fill="#0a0a0a"/><circle cx="1110" cy="535" r="14" fill="#c97a2a"/><circle cx="1110" cy="535" r="4" fill="#f7efdc"/></g>
+  <g id="vinyl"><circle cx="1190" cy="540" r="52" fill="#0a0a0a"/><circle cx="1190" cy="540" r="14" fill="#c97a2a"/><circle cx="1190" cy="540" r="4" fill="#f7efdc"/></g>
   <g id="steamG">
-    <path class="steamP" d="M930,496 q7,-11 0,-22 q-7,-11 0,-22" stroke="#fff" stroke-width="3.5" fill="none" opacity="0.65"/>
-    <path class="steamP" d="M942,498 q7,-11 0,-22 q-7,-11 0,-22" stroke="#fff" stroke-width="3.5" fill="none" opacity="0.65" style="animation-delay:.7s"/>
+    <path class="steamP" d="M1640,540 q7,-11 0,-22 q-7,-11 0,-22" stroke="#fff" stroke-width="3.5" fill="none" opacity="0.65"/>
+    <path class="steamP" d="M1652,542 q7,-11 0,-22 q-7,-11 0,-22" stroke="#fff" stroke-width="3.5" fill="none" opacity="0.65" style="animation-delay:.7s"/>
   </g>
   <g id="calG">
     <circle cx="1475" cy="188" r="6" fill="#4a4a4a"/>
@@ -49,7 +49,7 @@
   <g id="tris"></g>
   <g id="zones" fill="#fff" opacity="0">
     <rect data-id="piano" x="80" y="400" width="320" height="320"/>
-    <rect data-id="record" x="990" y="450" width="240" height="170"/>
+    <rect data-id="record" x="1070" y="455" width="240" height="170"/>
     <rect data-id="desk" x="1440" y="440" width="380" height="300"/>
     <rect data-id="cal" x="1428" y="185" width="94" height="158"/>
     <rect data-id="board" x="1690" y="270" width="240" height="220"/>
@@ -71,7 +71,7 @@ function openPanel(t,h){$('panelTitle').textContent=t;$('panelBody').innerHTML=h
 $('panelClose').onclick=()=>$('panel').classList.remove('open');
 $('panel').addEventListener('click',e=>{if(e.target.id==='panel')$('panel').classList.remove('open')});
 (function(){const d=new Date();$('calM').textContent=(d.getMonth()+1)+'月';$('calD').textContent=d.getDate()})();
-const TRIS=[['piano',240,380],['record',1110,450],['desk',1630,420],['cal',1475,165],['board',1810,250],['window',1110,10]];
+const TRIS=[['piano',240,380],['record',1190,455],['desk',1630,420],['cal',1475,165],['board',1810,250],['window',1110,10]];
 (function(){const g=$('tris');TRIS.forEach(([id,x,y])=>{el('polygon',{points:`${x},${y} ${x-15},${y-22} ${x+15},${y-22}`,fill:'#3d3d4f',stroke:'#14141f','stroke-width':3,class:'tri'},g).dataset.id=id})})();
 const bgm=$('bgm');let playing=false;
 function toggleMusic(){playing=!playing;if(playing){bgm.play().catch(()=>{});$('vinyl').classList.add('spin');$('musicNote').setAttribute('opacity',1);say('Rae','♪ 萨蒂《Gymnopédie No.1》')}else{bgm.pause();$('vinyl').classList.remove('spin');$('musicNote').setAttribute('opacity',0);say('Rae','音乐停了。')}}
