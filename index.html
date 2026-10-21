@@ -23,7 +23,8 @@
   /* ===== 图层（从下到上）：底板 → 白天窗景 → 家具精灵 → 碟片/唱臂 → 琴键/辉光 → 日光罩 → 猫/人物 → 提示 → 面板 ===== */
   #bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; user-select:none; -webkit-user-drag:none; z-index:1; }
   #winDay { position:absolute; z-index:2; pointer-events:none; opacity:0; transition:opacity 1.4s ease; }
-  .furn { position:absolute; pointer-events:none; user-select:none; -webkit-user-drag:none; }
+  .furn { position:absolute; pointer-events:none; user-select:none; -webkit-user-drag:none; image-rendering:pixelated; }
+  #winDay { image-rendering:pixelated; }
   #recordGroup { position:absolute; z-index:67; pointer-events:none; }
   #recordGroup .base { position:absolute; inset:0; width:100%; height:100%; }
   #discWrap { position:absolute; left:70.54%; top:20.26%; width:32.86%; aspect-ratio:1; transform:translate(-50%,-50%) scaleY(.664); }
