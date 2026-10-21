@@ -12,8 +12,7 @@
   @keyframes hintBob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
   .hint.dim { opacity:.15; animation:none; }
   .shadow { fill:rgba(0,0,0,.28); }
-  @keyframes walkBob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-6px); } }
-  .walking { animation:walkBob .36s ease-in-out infinite; }
+  /* 走路弹跳由JS控制，避免与翻转冲突 */
   #dialog { position:fixed; left:50%; transform:translateX(-50%); bottom:max(10px, env(safe-area-inset-bottom)); width:min(94vw,900px); z-index:50;
     background:#f7efdc; border:3px solid #7a5c3e; border-radius:12px; padding:10px 16px; font-size:16px; color:#4a3826;
     box-shadow:0 4px 18px rgba(0,0,0,.45); cursor:pointer; }
@@ -32,6 +31,14 @@
 <svg id="room" viewBox="0 0 1993 972" preserveAspectRatio="xMidYMid meet">
   <!-- 底板 -->
   <image href="assets/plate-night.webp" x="0" y="0" width="1993" height="972"/>
+
+  <!-- 窗户星空（静态） -->
+  <defs><clipPath id="winClip"><rect x="710" y="20" width="620" height="310"/></clipPath></defs>
+  <g clip-path="url(#winClip)">
+    <g id="stars"></g>
+    <circle cx="1150" cy="90" r="28" fill="#f5f3ce"/>
+    <circle cx="1140" cy="82" r="24" fill="#101a3d" opacity="0.3"/>
+  </g>
 
   <!-- 唱片（静态） -->
   <image id="vinyl" href="assets/disc.png" x="1191" y="429" width="116" height="77"/>
@@ -142,7 +149,6 @@ let walking = false;
 function walkTo(tx, ty, done){
   if(walking) return; walking = true;
   dimHints(true);
-  boy.el.classList.add('walking'); girl.el.classList.add('walking');
   girlTarget = { x: tx-80, y: ty };
   const speed = 260;
   let last = performance.now();
@@ -157,7 +163,9 @@ function walkTo(tx, ty, done){
       return;
     }
     boy.x += dx/dist*speed*dt; boy.y += dy/dist*speed*dt;
-    boy.el.style.transform = dx<0 ? 'scaleX(-1)' : '';
+    const flip = dx<0 ? 'scaleX(-1) ' : '';
+    const bob = Math.sin(t/170)*6;
+    boy.el.style.transform = flip + `translateY(${bob}px)`;
     boy.el.style.transformBox = 'fill-box'; boy.el.style.transformOrigin = 'center';
     place(boy);
     requestAnimationFrame(step);
@@ -174,7 +182,9 @@ function walkGirl(){
     const dx = tx-girl.x, dy = ty-girl.y, d = Math.hypot(dx,dy);
     if(d < 10){ place(girl); return; }
     girl.x += dx/d*speed*dt; girl.y += dy/d*speed*dt;
-    girl.el.style.transform = dx<0 ? 'scaleX(-1)' : '';
+    const gflip = dx<0 ? 'scaleX(-1) ' : '';
+    const gbob = Math.sin(t/170)*5;
+    girl.el.style.transform = gflip + `translateY(${gbob}px)`;
     girl.el.style.transformBox = 'fill-box'; girl.el.style.transformOrigin = 'center';
     place(girl);
     requestAnimationFrame(step);
@@ -192,6 +202,21 @@ const HINTS = [['piano',249,384],['shelf',458,292],['window',1020,120],['record'
 })();
 function dimHints(d){ document.querySelectorAll('#hints .hint').forEach(h=>h.classList.toggle('dim',d)); }
 function setMusicNote(x,y,s){ const n=$('musicNote'); n.setAttribute('x',x); n.setAttribute('y',y); n.setAttribute('opacity',s?1:0); }
+
+// 生成星星
+(function(){
+  const g = document.getElementById('stars');
+  const NS = "http://www.w3.org/2000/svg";
+  for(let i=0;i<60;i++){
+    const s = document.createElementNS(NS, 'rect');
+    s.setAttribute('x', 720 + Math.random()*600);
+    s.setAttribute('y', 30 + Math.random()*250);
+    s.setAttribute('width', 2.5);
+    s.setAttribute('height', 2.5);
+    s.setAttribute('fill', '#ffeec2');
+    g.appendChild(s);
+  }
+})();
 
 place(boy); place(girl);
 </script>
