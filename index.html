@@ -51,11 +51,7 @@
   #calDate .calD { color:#2e2a26; font-weight:800; line-height:1.12; }
   #calDate .calW { color:#6b5a3e; line-height:1.2; }
   #dayTint { position:absolute; inset:0; z-index:90; pointer-events:none; opacity:0; transition:opacity 1.4s ease;
-             background:linear-gradient(180deg, rgba(255,214,140,.16), rgba(255,196,110,.05) 55%, rgba(255,196,110,0)); }
-  /* 白天：整个房间提亮暖化（窗景/窗台白天版已是白天图，不再重复滤镜） */
-  #scene.day #bg, #scene.day .furn:not(#sillDay), #scene.day .sprite, #scene.day #cat, #scene.day #recordGroup {
-    filter:brightness(1.5) sepia(0.28) saturate(1.12) contrast(1.04); transition:filter 1.4s ease; }
-  #bg, .furn, .sprite, #cat, #recordGroup { transition:filter 1.4s ease; }
+             background:linear-gradient(180deg, rgba(255,244,220,.42), rgba(255,228,170,.22) 55%, rgba(255,220,150,.10)); }
   .sprite { position:absolute; transform:translate(-50%,-100%); pointer-events:none; }
   .sprite .fig { position:relative; width:100%; }
   .sprite .idle { display:block; width:100%; }
