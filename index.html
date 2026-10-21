@@ -10,8 +10,6 @@
   #room{width:min(100vw,205.04vh);height:min(100vh,48.77vw);display:block;touch-action:manipulation}
   .tri{animation:triBob 1.6s ease-in-out infinite;cursor:pointer}
   @keyframes triBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-  .tri.dim{opacity:.15;animation:none}
-  .shadow{fill:rgba(0,0,0,.28)}
   #dialog{position:fixed;left:50%;transform:translateX(-50%);bottom:58px;width:min(94vw,900px);z-index:50;background:#f7efdc;border:3px solid #7a5c3e;border-radius:12px;padding:10px 16px;font-size:16px;color:#4a3826;box-shadow:0 4px 18px rgba(0,0,0,.45);cursor:pointer}
   #dialog .who{font-weight:700;color:#8a5a2b;margin-right:8px}
   #panel{position:fixed;inset:0 0 48px 0;z-index:60;display:none;align-items:center;justify-content:center;background:rgba(5,8,18,.72)}
@@ -47,11 +45,7 @@
     <text id="calM" x="1590" y="310" text-anchor="middle" font-size="24" font-weight="700" fill="#fff">10月</text>
     <text id="calD" x="1590" y="380" text-anchor="middle" font-size="58" font-weight="800" fill="#333">21</text>
   </g>
-  <ellipse id="girlShadow" class="shadow" cx="0" cy="0" rx="34" ry="10"/>
-  <image id="girl" href="assets/girl-idle.png" x="0" y="0" width="84" height="148"/>
-  <ellipse id="boyShadow" class="shadow" cx="0" cy="0" rx="38" ry="11"/>
-  <image id="boy" href="assets/boy-idle.png" x="0" y="0" width="94" height="164"/>
-  <text id="musicNote" x="0" y="0" font-size="46" text-anchor="middle" opacity="0">🎵</text>
+  <text id="musicNote" x="240" y="320" font-size="46" text-anchor="middle" opacity="0">🎵</text>
   <g id="tris"></g>
   <g id="zones" fill="#fff" opacity="0">
     <rect data-id="piano" x="80" y="400" width="320" height="320"/>
@@ -60,13 +54,12 @@
     <rect data-id="cal" x="1530" y="250" width="120" height="182"/>
     <rect data-id="board" x="1690" y="270" width="240" height="220"/>
     <rect data-id="window" x="820" y="40" width="580" height="360"/>
-    <rect data-id="floor" x="0" y="620" width="1993" height="352"/>
   </g>
 </svg>
 </div>
-<div id="dialog"><span class="who">Rae</span><span id="dialogText">点一点房间里的东西，小人会自己走过去。也可以直接点地板走动。</span></div>
+<div id="dialog"><span class="who">Rae</span><span id="dialogText">点一点房间里的东西试试。</span></div>
 <div id="panel"><div id="panelCard"><button id="panelClose">关闭</button><h2 id="panelTitle"></h2><div id="panelBody"></div></div></div>
-<div id="infobar">🎹钢琴听音乐 · 🎵唱片机 · 💻书桌 · 📅日历 · 📌留言板 · 🌙窗户看天气 —— 点三角互动，点地板走动</div>
+<div id="infobar">🎹钢琴听音乐 · 🎵唱片机 · 💻书桌 · 📅日历 · 📌留言板 · 🌙窗户看天气 —— 点三角互动</div>
 <audio id="bgm" src="assets/gymnopedie.mp3" loop preload="auto"></audio>
 <script>
 "use strict";
@@ -80,10 +73,8 @@ $('panel').addEventListener('click',e=>{if(e.target.id==='panel')$('panel').clas
 (function(){const d=new Date();$('calM').textContent=(d.getMonth()+1)+'月';$('calD').textContent=d.getDate()})();
 const TRIS=[['piano',240,380],['record',1240,400],['desk',1630,420],['cal',1590,230],['board',1810,250],['window',1110,10]];
 (function(){const g=$('tris');TRIS.forEach(([id,x,y])=>{el('polygon',{points:`${x},${y} ${x-15},${y-22} ${x+15},${y-22}`,fill:'#3d3d4f',stroke:'#14141f','stroke-width':3,class:'tri'},g).dataset.id=id})})();
-function dimTris(d){document.querySelectorAll('#tris .tri').forEach(t=>t.classList.toggle('dim',d))}
 const bgm=$('bgm');let playing=false;
-function toggleMusic(){playing=!playing;if(playing){bgm.play().catch(()=>{});$('vinyl').classList.add('spin');setMusicNote(boy.x,boy.y-200,true);say('Rae','♪ 萨蒂《Gymnopédie No.1》')}else{bgm.pause();$('vinyl').classList.remove('spin');setMusicNote(0,0,false);say('Rae','音乐停了。')}}
-function setMusicNote(x,y,s){const n=$('musicNote');n.setAttribute('x',x);n.setAttribute('y',y);n.setAttribute('opacity',s?1:0)}
+function toggleMusic(){playing=!playing;if(playing){bgm.play().catch(()=>{});$('vinyl').classList.add('spin');$('musicNote').setAttribute('opacity',1);say('Rae','♪ 萨蒂《Gymnopédie No.1》')}else{bgm.pause();$('vinyl').classList.remove('spin');$('musicNote').setAttribute('opacity',0);say('Rae','音乐停了。')}}
 let weather={temp:19,desc:'多云',hi:22,lo:15,hum:80,ok:false};
 const WMO={0:'晴',1:'晴间多云',2:'多云',3:'阴',45:'雾',48:'雾',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',80:'阵雨',81:'阵雨',82:'暴雨',95:'雷阵雨',96:'雷阵雨',99:'雷阵雨'};
 fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.1551&current=temperature_2m,relative_humidity_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FShanghai').then(r=>r.json()).then(d=>{const c=d.current.weather_code;weather={temp:Math.round(d.current.temperature_2m),desc:WMO[c]||'多云',hi:Math.round(d.daily.temperature_2m_max[0]),lo:Math.round(d.daily.temperature_2m_min[0]),hum:Math.round(d.current.relative_humidity_2m),ok:true}}).catch(()=>{});
@@ -93,19 +84,18 @@ function updateWeatherPanel(){const d=new Date(),w='日一二三四五六'[d.get
 let notes=JSON.parse(localStorage.getItem('rae_notes')||'[{"n":"屋主 Rae","t":"欢迎来到我的小房间！"}]');
 function renderNotes(){const l=$('gbList');if(l)l.innerHTML=notes.map(n=>`<p><b>${n.n}:</b> ${n.t}</p>`).join('')}
 function addNote(){const n=$('gbName').value.trim()||'匿名',t=$('gbText').value.trim();if(!t)return;notes.push({n,t});localStorage.setItem('rae_notes',JSON.stringify(notes));renderNotes();$('gbText').value=''}
-const boy={el:$('boy'),sh:$('boyShadow'),x:850,y:760,w:94,h:164};
-const girl={el:$('girl'),sh:$('girlShadow'),x:770,y:760,w:84,h:148};
-function place(p){p.el.setAttribute('x',p.x-p.w/2);p.el.setAttribute('y',p.y-p.h);p.sh.setAttribute('cx',p.x);p.sh.setAttribute('cy',p.y+6)}
-place(boy);place(girl);
-let girlTarget=null,walking=false;
-const STAND={piano:[240,680],record:[1240,700],desk:[1630,740],cal:[1590,680],board:[1810,650],window:[1110,600]};
-function walkTo(tx,ty,done){if(walking)return;walking=true;dimTris(true);girlTarget={x:tx-85,y:ty};const speed=300;let last=performance.now();function step(t){const dt=Math.min(50,t-last)/1000;last=t;const dx=tx-boy.x,dy=ty-boy.y,dist=Math.hypot(dx,dy);if(dist<10){walking=false;dimTris(false);boy.el.style.transform='';place(boy);walkGirl();if(done)done();return}boy.x+=dx/dist*speed*dt;boy.y+=dy/dist*speed*dt;const flip=dx<0?'scaleX(-1) ':'';const bobY=Math.abs(Math.sin(t/150))*10;const tilt=Math.sin(t/300)*4;boy.el.style.transform=`${flip}translateY(${-bobY}px) rotate(${tilt}deg)`;boy.el.style.transformBox='fill-box';boy.el.style.transformOrigin='50% 100%';place(boy);requestAnimationFrame(step)}requestAnimationFrame(step)}
-function walkGirl(){if(!girlTarget)return;const tx=girlTarget.x,ty=girlTarget.y,speed=260;let last=performance.now();function step(t){const dt=Math.min(50,t-last)/1000;last=t;const dx=tx-girl.x,dy=ty-girl.y,d=Math.hypot(dx,dy);if(d<12){girl.el.style.transform='';place(girl);return}girl.x+=dx/d*speed*dt;girl.y+=dy/d*speed*dt;const flip=dx<0?'scaleX(-1) ':'';const bobY=Math.abs(Math.sin(t/150))*8;girl.el.style.transform=`${flip}translateY(${-bobY}px)`;girl.el.style.transformBox='fill-box';girl.el.style.transformOrigin='50% 100%';place(girl);requestAnimationFrame(step)}requestAnimationFrame(step)}
-document.querySelectorAll('#zones rect').forEach(z=>{z.style.cursor='pointer';z.style.pointerEvents='all';z.addEventListener('click',e=>{const id=z.dataset.id;if(id==='floor'){const pt=svgPoint(e);walkTo(pt.x,Math.min(880,Math.max(640,pt.y)),null);say('Rae','走过去看看。');return}const[tx,ty]=STAND[id];walkTo(tx,ty,()=>{if(id==='piano')toggleMusic();else{let[t,h]=PANELS[id];if(id==='cal')h=updateCalPanel();if(id==='window')h=updateWeatherPanel();openPanel(t,h);if(id==='board')renderNotes();say('Rae',{record:'黑胶的味道。',desk:'我的书桌。',board:'看看留言。',window:'窗外是杭州。',cal:'今天的日子。'}[id]||'')}})})});
-document.querySelectorAll('#tris .tri').forEach(tr=>{tr.style.pointerEvents='all';tr.addEventListener('click',()=>{const id=tr.dataset.id;const[tx,ty]=STAND[id];walkTo(tx,ty,()=>{if(id==='piano')toggleMusic();else{let[t,h]=PANELS[id];if(id==='cal')h=updateCalPanel();if(id==='window')h=updateWeatherPanel();openPanel(t,h);if(id==='board')renderNotes()}})})});
-function svgPoint(e){const svg=$('room'),pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;return pt.matrixTransform(svg.getScreenCTM().inverse())}
+function trigger(id){
+  if(id==='piano'){toggleMusic();return}
+  let[t,h]=PANELS[id];
+  if(id==='cal')h=updateCalPanel();
+  if(id==='window')h=updateWeatherPanel();
+  openPanel(t,h);
+  if(id==='board')renderNotes();
+  say('Rae',{record:'黑胶的味道。',desk:'我的书桌。',board:'看看留言。',window:'窗外是杭州。',cal:'今天的日子。'}[id]||'');
+}
+document.querySelectorAll('#zones rect').forEach(z=>{z.style.cursor='pointer';z.style.pointerEvents='all';z.addEventListener('click',()=>trigger(z.dataset.id))});
+document.querySelectorAll('#tris .tri').forEach(tr=>{tr.style.pointerEvents='all';tr.addEventListener('click',()=>trigger(tr.dataset.id))});
 $('dialog').onclick=()=>$('panel').classList.remove('open');
-place(boy);place(girl);
 </script>
 </body>
 </html>
