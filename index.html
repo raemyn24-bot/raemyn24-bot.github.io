@@ -1,1 +1,380 @@
-<!DOCTYPE html><html><head><meta charset='utf-8'><title></title></head><body></body></html>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Rae 的像素小屋</title>
+<style>
+  html,body { margin:0; padding:0; height:100%; background:#070b16; overflow:hidden; -webkit-user-select:none; user-select:none; }
+  #stage { position:fixed; inset:0 0 48px 0; display:flex; align-items:center; justify-content:center; }
+  #room { width:min(100vw,196vh); height:min(100vh,51vw); display:block; touch-action:manipulation; }
+  .tri { animation:triBob 1.6s ease-in-out infinite; cursor:pointer; }
+  @keyframes triBob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-8px); } }
+  .tri.dim { opacity:.15; animation:none; }
+  #dialog { position:fixed; left:50%; transform:translateX(-50%); bottom:58px; width:min(94vw,900px); z-index:50;
+    background:#f7efdc; border:3px solid #7a5c3e; border-radius:12px; padding:10px 16px; font-size:16px; color:#4a3826;
+    box-shadow:0 4px 18px rgba(0,0,0,.45); cursor:pointer; }
+  #dialog .who { font-weight:700; color:#8a5a2b; margin-right:8px; }
+  #panel { position:fixed; inset:0 0 48px 0; z-index:60; display:none; align-items:center; justify-content:center; background:rgba(5,8,18,.72); }
+  #panel.open { display:flex; }
+  #panelCard { width:min(92vw,560px); max-height:80vh; overflow:auto; background:#f7efdc; border:3px solid #7a5c3e; border-radius:14px; padding:18px 20px; color:#4a3826; }
+  #panelCard h2 { margin:0 0 10px; font-size:20px; color:#8a5a2b; }
+  #panelClose { float:right; border:2px solid #7a5c3e; background:#fff; border-radius:8px; padding:4px 12px; cursor:pointer; font-size:15px; }
+  #infobar { position:fixed; left:0; right:0; bottom:0; height:48px; z-index:50; background:#1a1a2e; color:#ccc;
+    display:flex; align-items:center; justify-content:center; font-size:13px; padding:0 12px; text-align:center; }
+  #musicNote { animation:floatUp 2.6s ease-in-out infinite; }
+  @keyframes floatUp { 0%,100% { transform:translateY(0); opacity:.9; } 50% { transform:translateY(-14px); opacity:.5; } }
+  #vinyl { transform-box:fill-box; transform-origin:center; }
+  #vinyl.spin { animation:spin 1.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .steamP { animation:steamUp 2.2s ease-in-out infinite; }
+  @keyframes steamUp { 0% { transform:translateY(0); opacity:0; } 30% { opacity:.7; } 100% { transform:translateY(-26px); opacity:0; } }
+  #tailG { transform-box:fill-box; transform-origin:15% 50%; animation:tailWag 2.2s ease-in-out infinite; }
+  @keyframes tailWag { 0%,100% { transform:rotate(-10deg); } 50% { transform:rotate(14deg); } }
+</style>
+</head>
+<body>
+<div id="stage">
+<svg id="room" viewBox="0 0 1993 972" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <clipPath id="winClip"><rect x="830" y="50" width="560" height="340"/></clipPath>
+  </defs>
+
+  <!-- ===== 房间底色 ===== -->
+  <rect x="0" y="0" width="1993" height="620" fill="#141c3a"/>
+  <rect x="0" y="620" width="1993" height="352" fill="#2e1f18"/>
+  <!-- 地板木纹 -->
+  <g stroke="#241812" stroke-width="2" opacity="0.6">
+    <line x1="0" y1="680" x2="1993" y2="680"/><line x1="0" y1="740" x2="1993" y2="740"/>
+    <line x1="0" y1="800" x2="1993" y2="800"/><line x1="0" y1="860" x2="1993" y2="860"/><line x1="0" y1="920" x2="1993" y2="920"/>
+  </g>
+  <!-- 地毯 -->
+  <rect x="520" y="640" width="560" height="180" rx="6" fill="#8a6d4a"/>
+  <rect x="540" y="658" width="520" height="144" rx="4" fill="#c9a86a"/>
+  <rect x="560" y="676" width="480" height="108" fill="#8a6d4a" opacity="0.4"/>
+
+  <!-- ===== 窗户 ===== -->
+  <g id="windowG">
+    <rect x="810" y="30" width="600" height="380" fill="#0a0f24"/>
+    <g clip-path="url(#winClip)">
+      <rect x="830" y="50" width="560" height="340" fill="#0d1530"/>
+      <g id="stars"></g>
+      <circle cx="1280" cy="110" r="26" fill="#f5f3ce"/>
+      <g id="city"></g>
+    </g>
+    <rect x="810" y="30" width="600" height="380" fill="none" stroke="#4a3020" stroke-width="16"/>
+    <line x1="1023" y1="30" x2="1023" y2="410" stroke="#4a3020" stroke-width="12"/>
+    <line x1="1210" y1="30" x2="1210" y2="410" stroke="#4a3020" stroke-width="12"/>
+    <line x1="810" y1="220" x2="1410" y2="220" stroke="#4a3020" stroke-width="12"/>
+    <!-- 窗帘 -->
+    <rect x="760" y="20" width="60" height="400" fill="#1e2a5a"/>
+    <rect x="1400" y="20" width="60" height="400" fill="#1e2a5a"/>
+  </g>
+
+  <!-- ===== 钢琴 ===== -->
+  <g id="pianoG">
+    <rect x="80" y="420" width="300" height="280" rx="8" fill="#3a2418"/>
+    <rect x="80" y="420" width="300" height="40" fill="#4a2e1e"/>
+    <rect x="100" y="500" width="260" height="60" fill="#f2ede2"/>
+    <g fill="#1a1a1a">
+      <rect x="120" y="500" width="14" height="36"/><rect x="148" y="500" width="14" height="36"/>
+      <rect x="190" y="500" width="14" height="36"/><rect x="218" y="500" width="14" height="36"/><rect x="246" y="500" width="14" height="36"/>
+      <rect x="288" y="500" width="14" height="36"/><rect x="316" y="500" width="14" height="36"/>
+    </g>
+    <rect x="140" y="620" width="180" height="24" fill="#2e1c12"/>
+    <rect x="150" y="644" width="20" height="76" fill="#2e1c12"/><rect x="290" y="644" width="20" height="76" fill="#2e1c12"/>
+  </g>
+
+  <!-- ===== 书架 ===== -->
+  <g id="shelfG">
+    <rect x="420" y="160" width="220" height="440" fill="#3a2418"/>
+    <g>
+      <rect x="430" y="200" width="200" height="14" fill="#2e1c12"/><rect x="430" y="300" width="200" height="14" fill="#2e1c12"/>
+      <rect x="430" y="400" width="200" height="14" fill="#2e1c12"/><rect x="430" y="500" width="200" height="14" fill="#2e1c12"/>
+    </g>
+    <g>
+      <rect x="440" y="230" width="18" height="70" fill="#5a3a2a"/><rect x="462" y="230" width="18" height="70" fill="#4a6a8a"/>
+      <rect x="484" y="230" width="18" height="70" fill="#6a4a3a"/><rect x="506" y="230" width="18" height="70" fill="#3a5a4a"/>
+      <rect x="440" y="330" width="18" height="70" fill="#4a5a8a"/><rect x="462" y="330" width="18" height="70" fill="#6a3a4a"/>
+      <rect x="484" y="330" width="18" height="70" fill="#5a5a3a"/><rect x="506" y="330" width="18" height="70" fill="#3a4a6a"/>
+      <rect x="440" y="430" width="18" height="70" fill="#6a5a4a"/><rect x="462" y="430" width="18" height="70" fill="#4a3a5a"/>
+    </g>
+  </g>
+
+  <!-- ===== 唱片柜 ===== -->
+  <g id="recordG">
+    <rect x="1080" y="480" width="320" height="180" rx="6" fill="#3a2418"/>
+    <rect x="1090" y="560" width="300" height="80" fill="#2e1c12"/>
+    <!-- 咖啡机 -->
+    <rect x="1100" y="420" width="90" height="80" rx="6" fill="#4a4a5a"/>
+    <rect x="1110" y="440" width="70" height="30" fill="#2a2a3a"/>
+    <rect x="1120" y="480" width="50" height="20" fill="#6a4a2a"/>
+    <!-- 唱盘 -->
+    <ellipse cx="1300" cy="520" rx="70" ry="22" fill="#1a1a1a"/>
+    <g id="vinyl">
+      <circle cx="1300" cy="514" r="52" fill="#0a0a0a"/>
+      <circle cx="1300" cy="514" r="14" fill="#c97a2a"/>
+      <circle cx="1300" cy="514" r="4" fill="#f7efdc"/>
+    </g>
+  </g>
+
+  <!-- ===== 书桌 ===== -->
+  <g id="deskG">
+    <rect x="1440" y="520" width="380" height="40" fill="#4a3020"/>
+    <rect x="1460" y="560" width="24" height="180" fill="#3a2418"/><rect x="1776" y="560" width="24" height="180" fill="#3a2418"/>
+    <!-- 笔记本 -->
+    <rect x="1540" y="440" width="140" height="90" rx="6" fill="#1a1a2a"/>
+    <rect x="1550" y="450" width="120" height="70" fill="#2a4a7a"/>
+    <circle cx="1610" cy="485" r="18" fill="#f5c542"/>
+    <!-- 台灯 -->
+    <rect x="1480" y="380" width="16" height="140" fill="#2a2a2a"/>
+    <ellipse cx="1500" cy="380" rx="40" ry="24" fill="#3a3a3a"/>
+    <ellipse cx="1500" cy="392" rx="28" ry="12" fill="#ffdf8a" opacity="0.8"/>
+    <!-- 咖啡杯（冒热气） -->
+    <rect x="1700" y="490" width="44" height="36" rx="6" fill="#f7efdc"/>
+    <rect x="1744" y="498" width="14" height="20" rx="6" fill="none" stroke="#f7efdc" stroke-width="6"/>
+    <g id="steamG">
+      <path class="steamP" d="M1714,482 q7,-11 0,-22 q-7,-11 0,-22" stroke="#fff" stroke-width="3.5" fill="none" opacity="0.65"/>
+      <path class="steamP" d="M1728,484 q7,-11 0,-22 q-7,-11 0,-22" stroke="#fff" stroke-width="3.5" fill="none" opacity="0.65" style="animation-delay:.7s"/>
+      <path class="steamP" d="M1740,482 q7,-11 0,-22 q-7,-11 0,-22" stroke="#fff" stroke-width="3.5" fill="none" opacity="0.65" style="animation-delay:1.4s"/>
+    </g>
+  </g>
+
+  <!-- ===== 日历 ===== -->
+  <g id="calG">
+    <circle cx="1590" cy="252" r="7" fill="#4a4a4a"/>
+    <line x1="1590" y1="252" x2="1568" y2="282" stroke="#8a6d4a" stroke-width="4"/>
+    <line x1="1590" y1="252" x2="1612" y2="282" stroke="#8a6d4a" stroke-width="4"/>
+    <rect x="1530" y="282" width="120" height="150" rx="8" fill="#f7f1e3" stroke="#7a5c3e" stroke-width="5"/>
+    <rect x="1530" y="282" width="120" height="40" fill="#c0392b"/>
+    <text id="calM" x="1590" y="310" text-anchor="middle" font-size="24" font-weight="700" fill="#fff">10月</text>
+    <text id="calD" x="1590" y="380" text-anchor="middle" font-size="58" font-weight="800" fill="#333">21</text>
+  </g>
+
+  <!-- ===== 留言板 ===== -->
+  <g id="boardG">
+    <rect x="1690" y="270" width="240" height="220" rx="8" fill="#6a4a2a"/>
+    <rect x="1700" y="280" width="220" height="200" fill="#8a6238"/>
+    <g font-size="13" text-anchor="middle">
+      <rect x="1712" y="292" width="62" height="62" fill="#f5a3b3"/><text x="1743" y="326" fill="#5a2a3a">加油</text>
+      <rect x="1784" y="292" width="62" height="62" fill="#a3d8f5"/><text x="1815" y="326" fill="#2a4a5a">你好</text>
+      <rect x="1856" y="292" width="62" height="62" fill="#f5e3a3"/><text x="1887" y="326" fill="#5a4a2a">♡</text>
+      <rect x="1712" y="364" width="62" height="62" fill="#b3f5a3"/><text x="1743" y="398" fill="#2a5a2a">赞</text>
+      <rect x="1784" y="364" width="62" height="62" fill="#d8b3f5"/><text x="1815" y="398" fill="#4a2a5a">✎</text>
+    </g>
+  </g>
+
+  <!-- ===== 猫 ===== -->
+  <g id="catG">
+    <ellipse cx="760" cy="792" rx="105" ry="16" fill="rgba(0,0,0,.3)"/>
+    <ellipse cx="760" cy="750" rx="95" ry="42" fill="#5a5a6e"/>
+    <ellipse cx="720" cy="736" rx="34" ry="30" fill="#5a5a6e"/>
+    <polygon points="700,714 710,688 724,710" fill="#5a5a6e"/>
+    <polygon points="736,710 748,688 756,714" fill="#5a5a6e"/>
+    <line x1="708" y1="736" x2="700" y2="736" stroke="#2a2a35" stroke-width="2"/>
+    <line x1="732" y1="736" x2="740" y2="736" stroke="#2a2a35" stroke-width="2"/>
+    <g id="tailG">
+      <ellipse cx="845" cy="756" rx="34" ry="13" fill="#5a5a6e"/>
+    </g>
+  </g>
+
+  <!-- ===== 人物 ===== -->
+  <ellipse id="girlShadow" cx="0" cy="0" rx="34" ry="10" fill="rgba(0,0,0,.28)"/>
+  <image id="girl" href="assets/girl-idle.png" x="0" y="0" width="84" height="148"/>
+  <ellipse id="boyShadow" cx="0" cy="0" rx="38" ry="11" fill="rgba(0,0,0,.28)"/>
+  <image id="boy" href="assets/boy-idle.png" x="0" y="0" width="94" height="164"/>
+
+  <!-- 音乐音符 -->
+  <text id="musicNote" x="0" y="0" font-size="46" text-anchor="middle" opacity="0">🎵</text>
+
+  <!-- 深灰三角 -->
+  <g id="tris"></g>
+
+  <!-- 点击区 -->
+  <g id="zones" fill="#fff" opacity="0">
+    <rect data-id="piano" x="80" y="400" width="320" height="320"/>
+    <rect data-id="record" x="1080" y="420" width="320" height="220"/>
+    <rect data-id="desk" x="1440" y="440" width="380" height="300"/>
+    <rect data-id="cal" x="1530" y="250" width="120" height="182"/>
+    <rect data-id="board" x="1690" y="270" width="240" height="220"/>
+    <rect data-id="window" x="810" y="30" width="600" height="380"/>
+    <rect data-id="floor" x="0" y="620" width="1993" height="352"/>
+  </g>
+</svg>
+</div>
+
+<div id="dialog"><span class="who">Rae</span><span id="dialogText">点一点房间里的东西，小人会自己走过去。也可以直接点地板走动。</span></div>
+<div id="panel"><div id="panelCard"><button id="panelClose">关闭</button><h2 id="panelTitle"></h2><div id="panelBody"></div></div></div>
+<div id="infobar">🎹钢琴听音乐 · 🎵唱片机 · 💻书桌 · 📅日历 · 📌留言板 · 🌙窗户看天气 —— 点三角互动，点地板走动</div>
+<audio id="bgm" src="assets/gymnopedie.mp3" loop preload="auto"></audio>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const SVGNS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent){ const e = document.createElementNS(SVGNS, tag); for(const k in attrs) e.setAttribute(k, attrs[k]); if(parent) parent.appendChild(e); return e; }
+function say(who, text){ document.querySelector('#dialog .who').textContent = who; document.querySelector('#dialogText').textContent = text; }
+function openPanel(title, html){ $('panelTitle').textContent = title; $('panelBody').innerHTML = html; $('panel').classList.add('open'); }
+$('panelClose').onclick = ()=> $('panel').classList.remove('open');
+$('panel').addEventListener('click', e=>{ if(e.target.id==='panel') $('panel').classList.remove('open'); });
+
+/* 日历自动日期 */
+(function(){
+  const d = new Date();
+  $('calM').textContent = (d.getMonth()+1)+'月';
+  $('calD').textContent = d.getDate();
+})();
+
+/* 星星和城市 */
+(function(){
+  const g = $('stars');
+  for(let i=0;i<70;i++){
+    el('rect',{x:840+Math.random()*540, y:60+Math.random()*200, width:3, height:3, fill:'#ffeec2'}, g);
+  }
+  const c = $('city'), b=[[850,300,60,90],[920,320,50,70],[985,290,70,100],[1070,315,55,75],[1135,295,65,95],[1215,320,50,70],[1275,305,60,85],[1345,320,45,70]];
+  b.forEach(r=> el('rect',{x:r[0],y:r[1],width:r[2],height:r[3],fill:'#0a0f24'}, c));
+  for(let i=0;i<40;i++) el('rect',{x:860+((i*53)%500), y:310+((i*29)%60), width:5, height:5, fill:'#ffca7a'}, c);
+})();
+
+/* 深灰三角 */
+const TRIS = [['piano',230,380],['record',1240,400],['desk',1630,420],['cal',1590,230],['board',1810,250],['window',1110,10]];
+(function(){
+  const g = $('tris');
+  TRIS.forEach(([id,x,y])=>{
+    el('polygon',{points:`${x},${y} ${x-15},${y-22} ${x+15},${y-22}`, fill:'#3d3d4f', stroke:'#14141f','stroke-width':3, class:'tri'}, g).dataset.id=id;
+  });
+})();
+function dimTris(d){ document.querySelectorAll('#tris .tri').forEach(t=>t.classList.toggle('dim',d)); }
+
+/* BGM */
+const bgm = $('bgm');
+let playing = false;
+function toggleMusic(){
+  playing = !playing;
+  if(playing){ bgm.play().catch(()=>{}); $('vinyl').classList.add('spin'); setMusicNote(boy.x, boy.y-200, true); say('Rae','♪ 萨蒂《Gymnopédie No.1》'); }
+  else { bgm.pause(); $('vinyl').classList.remove('spin'); setMusicNote(0,0,false); say('Rae','音乐停了。'); }
+}
+function setMusicNote(x,y,s){ const n=$('musicNote'); n.setAttribute('x',x); n.setAttribute('y',y); n.setAttribute('opacity',s?1:0); }
+
+/* 天气 */
+let weather = { temp:19, desc:'多云', hi:22, lo:15, hum:80, ok:false };
+const WMO = {0:'晴',1:'晴间多云',2:'多云',3:'阴',45:'雾',48:'雾',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',80:'阵雨',81:'阵雨',82:'暴雨',95:'雷阵雨',96:'雷阵雨',99:'雷阵雨'};
+fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.1551&current=temperature_2m,relative_humidity_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FShanghai')
+  .then(r=>r.json()).then(d=>{ const c=d.current.weather_code;
+    weather={temp:Math.round(d.current.temperature_2m), desc:WMO[c]||'多云', hi:Math.round(d.daily.temperature_2m_max[0]), lo:Math.round(d.daily.temperature_2m_min[0]), hum:Math.round(d.current.relative_humidity_2m), ok:true};
+  }).catch(()=>{});
+
+/* 面板 */
+const PANELS = {
+  piano:['🎹 钢琴','<p>萨蒂《Gymnopédie No.1》</p><button onclick="toggleMusic()" style="padding:8px 20px;font-size:16px;">播放 / 停止</button>'],
+  record:['🎵 唱片机','<p>正在播放：萨蒂《Gymnopédie No.1》</p><p>33⅓ RPM · 黑胶</p>'],
+  desk:['💻 书桌','<p>Rae 的联系方式</p><p><i>（等 Rae 提供）</i></p>'],
+  cal:['📅 日历',''],
+  board:['📌 留言板','<div id="gbList"></div><input id="gbName" placeholder="名字" style="width:30%"><input id="gbText" placeholder="留句话吧" style="width:60%"><button onclick="addNote()">贴上</button>'],
+  window:['🌙 窗外 · 杭州',''],
+};
+function updateCalPanel(){ const d=new Date(),w='日一二三四五六'[d.getDay()]; return `<p style="font-size:36px;">${d.getMonth()+1}月${d.getDate()}日</p><p>星期${w}</p>`; }
+function updateWeatherPanel(){ const d=new Date(),w='日一二三四五六'[d.getDay()]; return `<p style="font-size:32px;">${weather.temp}°C ${weather.desc}</p><p>杭州 · ${weather.lo}°~${weather.hi}° · 湿度${weather.hum}%</p><p>${d.getMonth()+1}月${d.getDate()}日 星期${w}${weather.ok?'':'（离线）'}</p>`; }
+let notes = JSON.parse(localStorage.getItem('rae_notes')||'[{"n":"屋主 Rae","t":"欢迎来到我的小房间！"}]');
+function renderNotes(){ const l=$('gbList'); if(l) l.innerHTML=notes.map(n=>`<p><b>${n.n}:</b> ${n.t}</p>`).join(''); }
+function addNote(){ const n=$('gbName').value.trim()||'匿名',t=$('gbText').value.trim(); if(!t)return; notes.push({n,t}); localStorage.setItem('rae_notes',JSON.stringify(notes)); renderNotes(); $('gbText').value=''; }
+
+/* 人物 */
+const boy={el:$('boy'),sh:$('boyShadow'),x:850,y:760,w:94,h:164};
+const girl={el:$('girl'),sh:$('girlShadow'),x:770,y:760,w:84,h:148};
+function place(p){ p.el.setAttribute('x',p.x-p.w/2); p.el.setAttribute('y',p.y-p.h); p.sh.setAttribute('cx',p.x); p.sh.setAttribute('cy',p.y+6); }
+place(boy); place(girl);
+let girlTarget=null, walking=false;
+const STAND={piano:[240,680],record:[1240,700],desk:[1630,740],cal:[1590,680],board:[1810,650],window:[1110,600]};
+const OBSTACLES=[{x0:80,x1:400,y0:400,y1:720},{x0:420,x1:640,y0:160,y1:600},{x0:1080,x1:1400,y0:420,y1:660},{x0:1440,x1:1820,y0:440,y1:760}];
+
+function walkTo(tx,ty,done){
+  if(walking) return; walking=true; dimTris(true);
+  girlTarget={x:tx-85,y:ty};
+  OBSTACLES.forEach(r=>{ if(tx>r.x0&&tx<r.x1&&ty>r.y0&&ty<r.y1) ty=r.y1+50; });
+  const speed=300; let last=performance.now();
+  function step(t){
+    const dt=Math.min(50,t-last)/1000; last=t;
+    const dx=tx-boy.x, dy=ty-boy.y, dist=Math.hypot(dx,dy);
+    if(dist<10){
+      walking=false; dimTris(false); boy.el.style.transform=''; place(boy); walkGirl();
+      if(done) done(); return;
+    }
+    boy.x+=dx/dist*speed*dt; boy.y+=dy/dist*speed*dt;
+    const flip=dx<0?'scaleX(-1) ':'';
+    const bobY=Math.abs(Math.sin(t/150))*10;
+    const tilt=Math.sin(t/300)*4;
+    boy.el.style.transform=`${flip}translateY(${-bobY}px) rotate(${tilt}deg)`;
+    boy.el.style.transformBox='fill-box'; boy.el.style.transformOrigin='50% 100%';
+    place(boy); requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function walkGirl(){
+  if(!girlTarget) return;
+  const tx=girlTarget.x, ty=girlTarget.y, speed=260; let last=performance.now();
+  function step(t){
+    const dt=Math.min(50,t-last)/1000; last=t;
+    const dx=tx-girl.x, dy=ty-girl.y, d=Math.hypot(dx,dy);
+    if(d<12){ girl.el.style.transform=''; place(girl); return; }
+    girl.x+=dx/d*speed*dt; girl.y+=dy/d*speed*dt;
+    const flip=dx<0?'scaleX(-1) ':'';
+    const bobY=Math.abs(Math.sin(t/150))*8;
+    girl.el.style.transform=`${flip}translateY(${-bobY}px)`;
+    girl.el.style.transformBox='fill-box'; girl.el.style.transformOrigin='50% 100%';
+    place(girl); requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* 点击 */
+document.querySelectorAll('#zones rect').forEach(z=>{
+  z.style.cursor='pointer'; z.style.pointerEvents='all';
+  z.addEventListener('click',e=>{
+    const id=z.dataset.id;
+    if(id==='floor'){
+      const pt=svgPoint(e);
+      walkTo(pt.x,Math.min(880,Math.max(640,pt.y)),null);
+      say('Rae','走过去看看。'); return;
+    }
+    const [tx,ty]=STAND[id];
+    walkTo(tx,ty,()=>{
+      if(id==='piano') toggleMusic();
+      else{
+        let [t,h]=PANELS[id];
+        if(id==='cal') h=updateCalPanel();
+        if(id==='window') h=updateWeatherPanel();
+        openPanel(t,h);
+        if(id==='board') renderNotes();
+        say('Rae',{record:'黑胶的味道。',desk:'我的书桌。',board:'看看留言。',window:'窗外是杭州。',cal:'今天的日子。'}[id]||'');
+      }
+    });
+  });
+});
+document.querySelectorAll('#tris .tri').forEach(tr=>{
+  tr.style.pointerEvents='all';
+  tr.addEventListener('click',()=>{
+    const id=tr.dataset.id;
+    const [tx,ty]=STAND[id];
+    walkTo(tx,ty,()=>{
+      if(id==='piano') toggleMusic();
+      else{
+        let [t,h]=PANELS[id];
+        if(id==='cal') h=updateCalPanel();
+        if(id==='window') h=updateWeatherPanel();
+        openPanel(t,h);
+        if(id==='board') renderNotes();
+      }
+    });
+  });
+});
+function svgPoint(e){
+  const svg=$('room'), pt=svg.createSVGPoint();
+  pt.x=e.clientX; pt.y=e.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+$('dialog').onclick=()=>$('panel').classList.remove('open');
+place(boy); place(girl);
+</script>
+</body>
+</html>
