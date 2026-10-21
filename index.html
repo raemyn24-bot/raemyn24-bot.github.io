@@ -298,6 +298,22 @@ fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.155
   }
   requestAnimationFrame(frame);
 })();
+/* ---------- 诊断层（临时） ---------- */
+(function(){
+  const d = document.createElement('div');
+  d.id = 'diag'; d.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999;background:rgba(0,0,0,.8);color:#0f0;font:12px monospace;padding:8px;white-space:pre;';
+  document.body.appendChild(d);
+  window.__diagUpd = function(){
+    const sc = $('scene'), wx = $('winWx'), bg = $('bg');
+    const sbr = sc.getBoundingClientRect(), wbr = wx.getBoundingClientRect();
+    d.textContent = 'hour='+new Date().getHours()+' isDay='+isDayNow()+' sceneClass='+sc.className+
+      '\nscene='+Math.round(sbr.width)+'x'+Math.round(sbr.height)+
+      ' winWx='+Math.round(wbr.width)+'x'+Math.round(wbr.height)+
+      '\nbg='+Math.round(bg.getBoundingClientRect().width)+'x'+Math.round(bg.getBoundingClientRect().height)+
+      ' dpr='+window.devicePixelRatio+' vw='+window.innerWidth;
+  };
+  setInterval(window.__diagUpd, 1000);
+})();
 const isDayNow = ()=>{ const h = new Date().getHours(); return h>=6 && h<18; };
 function applyDayNight(){
   const day = isDayNow();
