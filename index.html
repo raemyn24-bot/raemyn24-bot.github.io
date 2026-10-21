@@ -10,8 +10,8 @@
   #room{width:min(100vw,205.04vh);height:min(100vh,48.77vw);display:block;touch-action:manipulation}
   .tri{animation:triBob 1.6s ease-in-out infinite;cursor:pointer}
   .star{animation:twinkle 2.4s ease-in-out infinite}
-  #catTailImg{animation:tailWag 6s ease-in-out infinite}
-  @keyframes tailWag{0%,70%,100%{transform:rotate(0deg)}80%{transform:rotate(-12deg)}90%{transform:rotate(8deg)}}
+  #catTail{animation:tailWag 5s ease-in-out infinite}
+  @keyframes tailWag{0%,60%,100%{transform:rotate(0deg)}70%{transform:rotate(-15deg)}80%{transform:rotate(10deg)}90%{transform:rotate(-5deg)}}
 
 
   @keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
@@ -46,7 +46,7 @@
   
     </g>
   <image id="catImg" href="assets/cat.png" x="719" y="418" width="157" height="116"/>
-  <image id="catTailImg" href="assets/cat_tail.png" x="719" y="441" width="58" height="93" style="transform-box:fill-box;transform-origin:80% 20%;animation:tailWag 6s ease-in-out infinite"/>
+  <image id="catTail" href="assets/cat_tail.png" x="719" y="418" width="60" height="116" style="transform-box:fill-box;transform-origin:85% 60%"/>
   <g id="tris"></g>
   <g id="zones" fill="#fff" opacity="0">
     <rect data-id="piano" x="80" y="400" width="320" height="320"/>
