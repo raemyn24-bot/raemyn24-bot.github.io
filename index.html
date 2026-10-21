@@ -52,6 +52,10 @@
   #calDate .calW { color:#6b5a3e; line-height:1.2; }
   #dayTint { position:absolute; inset:0; z-index:90; pointer-events:none; opacity:0; transition:opacity 1.4s ease;
              background:linear-gradient(180deg, rgba(255,214,140,.16), rgba(255,196,110,.05) 55%, rgba(255,196,110,0)); }
+  /* 白天：整个房间提亮暖化（窗景/窗台白天版已是白天图，不再重复滤镜） */
+  #scene.day #bg, #scene.day .furn:not(#sillDay), #scene.day .sprite, #scene.day #cat, #scene.day #recordGroup {
+    filter:brightness(1.5) sepia(0.28) saturate(1.12) contrast(1.04); transition:filter 1.4s ease; }
+  #bg, .furn, .sprite, #cat, #recordGroup { transition:filter 1.4s ease; }
   .sprite { position:absolute; transform:translate(-50%,-100%); pointer-events:none; }
   .sprite .fig { position:relative; width:100%; }
   .sprite .idle { display:block; width:100%; }
@@ -62,8 +66,9 @@
                     background:radial-gradient(ellipse at center, rgba(18,11,4,.30), rgba(18,11,4,0) 70%); transform:skewX(-22deg); filter:blur(3px); }
   /* 可点击提示：独立一层（#hints），内容与位置都在 CONFIG.HINTS 里，改这里或改配置都行 */
   #hints { position:absolute; inset:0; z-index:95; pointer-events:none; }
-  .hint-hand { position:absolute; transform:translate(-50%,-50%); pointer-events:none; line-height:1;
-               filter:drop-shadow(0 2px 3px rgba(0,0,0,.55)); animation:hintTap 2s ease-in-out infinite; transition:opacity .6s; }
+  .hint-hand { position:absolute; transform:translate(-50%,-50%); pointer-events:none;
+               filter:drop-shadow(0 2px 3px rgba(0,0,0,.55)); animation:hintTap 2s ease-in-out infinite; transition:opacity .6s; width:3.2%; }
+  .hint-hand img { width:100%; display:block; image-rendering:pixelated; }
   @keyframes hintTap { 0%,100% { transform:translate(-50%,-50%) translateY(0) scale(1); }
     10% { transform:translate(-50%,-50%) translateY(8px) scale(.9); }
     24% { transform:translate(-50%,-50%) translateY(0) scale(1); } }
@@ -112,7 +117,8 @@
   <div id="sceneWrap">
   <div id="scene">
     <img id="bg" src="assets/room-bg.webp?v=6" alt="Rae 的像素房间">
-    <img id="winDay" src="assets/win-day.png" alt="" style="left:36.88%; top:0.51%; width:34.37%; height:41.15%;">
+    <img id="winDay" src="assets/win-day.png" alt="" style="left:36.88%; top:0.51%; width:34.37%; height:41.15%; display:none;">
+    <canvas id="winWx" style="position:absolute; left:36.88%; top:0.51%; width:34.37%; height:41.15%; z-index:2; pointer-events:none; image-rendering:pixelated;"></canvas>
     <!-- 家具图层：每件一个 <img>，位置/尺寸对着原画量好；要换哪件，只换那张图和它的 style -->
     <img class="furn" src="assets/furn-cal.png" alt="" style="left:72.15%; top:11.52%; width:6.72%; z-index:32;">
     <div id="calDate"><div class="calM"></div><div class="calD"></div><div class="calW"></div></div>
@@ -207,18 +213,95 @@ dialogText.textContent = CONFIG.idleDialog; fit();
 /* ---------- 杭州天气（Open-Meteo） ---------- */
 const WMO = {0:'晴',1:'晴间多云',2:'多云',3:'阴',45:'雾',48:'雾',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',80:'阵雨',81:'阵雨',82:'暴雨阵雨',85:'阵雪',86:'阵雪',95:'雷阵雨',96:'雷阵雨',99:'雷阵雨'};
 let weather = { temp:19, desc:'小雨', kind:'rain', hi:20, lo:14, hum:91, ok:false };
-function wmoKind(c){ if([51,53,55,61,63,65,80,81,82,95,96,99].includes(c)) return 'rain'; if([71,73,75,77,85,86].includes(c)) return 'snow'; if(c===0) return 'clear'; if([1,2].includes(c)) return 'cloud'; return 'overcast'; }
+function wmoKind(c){ if([95,96,99].includes(c)) return 'storm'; if([51,53,55,61,63,65,80,81,82].includes(c)) return 'rain'; if([71,73,75,77,85,86].includes(c)) return 'snow'; if(c===0) return 'clear'; if([1,2].includes(c)) return 'cloud'; return 'overcast'; }
 fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.1551&current=temperature_2m,relative_humidity_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FShanghai')
   .then(r=>r.json()).then(d=>{ const c = d.current.weather_code;
     weather = { temp:Math.round(d.current.temperature_2m), desc:WMO[c]||'多云', kind:wmoKind(c),
                 hi:Math.round(d.daily.temperature_2m_max[0]), lo:Math.round(d.daily.temperature_2m_min[0]),
                 hum:Math.round(d.current.relative_humidity_2m), ok:true }; }).catch(()=>{});
 
-/* ---------- 昼夜（6:00 天亮，18:00 天黑）+ 日历真实日期 ---------- */
+/* ---------- 窗户实时天气 Canvas（常驻） ---------- */
+(function(){
+  const cv = $('winWx'); if(!cv) return;
+  cv.width = 685; cv.height = 400;
+  const g = cv.getContext('2d');
+  const stars = Array.from({length:60},()=>({x:Math.random()*685,y:Math.random()*200,s:Math.random()<.3?2.5:1.4,tw:Math.random()*6.28}));
+  const rain = Array.from({length:130},()=>({x:Math.random()*700,y:Math.random()*400,v:6+Math.random()*5}));
+  const snow = Array.from({length:80},()=>({x:Math.random()*685,y:Math.random()*400,v:.7+Math.random(),ph:Math.random()*6.28}));
+  const clouds = Array.from({length:6},(_,i)=>({x:i*130+Math.random()*50,y:30+Math.random()*60,w:100+Math.random()*80,v:.15+Math.random()*.2}));
+  let flash = 0, flashT = 0;
+  const city = [[10,230,70,170],[95,260,55,140],[160,215,80,185],[255,250,60,150],[325,225,75,175],[415,265,55,135],[480,235,78,165],[570,260,60,140],[645,240,40,160]];
+  function frame(t){
+    const day = isDayNow(), kind = weather.kind;
+    // 天空
+    const sky = g.createLinearGradient(0,0,0,400);
+    if(kind==='overcast'||kind==='rain'||kind==='storm'){
+      if(day){ sky.addColorStop(0,'#7a8ba3'); sky.addColorStop(1,'#aeb9c7'); }
+      else { sky.addColorStop(0,'#1a2340'); sky.addColorStop(1,'#2e3a5c'); }
+    } else {
+      if(day){ sky.addColorStop(0,'#5f9de0'); sky.addColorStop(1,'#cfe8fb'); }
+      else { sky.addColorStop(0,'#101a3d'); sky.addColorStop(1,'#33436e'); }
+    }
+    g.fillStyle = sky; g.fillRect(0,0,685,400);
+    // 星星/月亮（夜晴）
+    if(!day && (kind==='clear'||kind==='cloud')){
+      stars.forEach(s=>{ if(Math.sin(t/700+s.tw)>-0.3){ g.fillStyle='#ffeec2'; g.fillRect(s.x,s.y,s.s,s.s); } });
+      g.fillStyle='#f5d76e'; g.beginPath(); g.arc(590,60,20,0,7); g.fill();
+      g.fillStyle = day ? '#5f9de0' : '#101a3d'; g.beginPath(); g.arc(582,54,17,0,7); g.fill();
+    }
+    // 太阳（昼晴）
+    if(day && kind==='clear'){
+      g.fillStyle='#ffd94d'; g.beginPath(); g.arc(590,60,24,0,7); g.fill();
+      g.fillStyle='rgba(255,217,77,.35)'; g.beginPath(); g.arc(590,60,34,0,7); g.fill();
+    }
+    // 云
+    const cloudCol = day ? (kind==='clear'?'rgba(255,255,255,.92)':'rgba(240,244,250,.95)') : 'rgba(80,100,150,.8)';
+    const nCloud = kind==='clear'?3 : kind==='cloud'?5 : 7;
+    g.fillStyle = cloudCol;
+    clouds.slice(0,nCloud).forEach(c=>{
+      c.x += c.v * (kind==='clear'?1:1.6); if(c.x-c.w>685) c.x = -c.w;
+      g.beginPath(); g.ellipse(c.x,c.y,c.w/2,15,0,0,7); g.ellipse(c.x+25,c.y-9,c.w/3,12,0,0,7); g.fill();
+    });
+    // 城市剪影
+    g.fillStyle = day ? '#5d7ba6' : '#0c1330';
+    city.forEach(b=> g.fillRect(b[0],b[1],b[2],b[3]));
+    if(!day){ g.fillStyle='#ffca7a'; for(let i=0;i<80;i++){ g.fillRect(16+((i*53)%650), 245+((i*29)%120), 3.5, 3.5); } }
+    g.fillStyle = day ? '#7d94b5' : '#090f24'; g.fillRect(0,376,685,24);
+    // 雨
+    if(kind==='rain'||kind==='storm'){
+      g.strokeStyle='rgba(190,215,250,.7)'; g.lineWidth=2; g.beginPath();
+      rain.forEach(p=>{ p.y+=p.v*2.6; p.x-=p.v*.8; if(p.y>400){p.y=-10;p.x=Math.random()*720;} if(p.x<-12)p.x=690;
+        g.moveTo(p.x,p.y); g.lineTo(p.x-4,p.y+16); }); g.stroke();
+    }
+    // 雪
+    if(kind==='snow'){
+      g.fillStyle='rgba(255,255,255,.92)';
+      snow.forEach(p=>{ p.y+=p.v; p.x+=Math.sin(t/600+p.ph)*.6; if(p.y>400){p.y=-5;p.x=Math.random()*685;}
+        g.beginPath(); g.arc(p.x,p.y,2.4,0,7); g.fill(); });
+    }
+    // 闪电
+    if(kind==='storm'){
+      flashT--;
+      if(flashT<=0){ flash = 8+Math.random()*10; flashT = 120+Math.random()*280; }
+      if(flash>0){
+        flash--;
+        g.fillStyle = `rgba(255,255,255,${0.55*(flash/18)})`; g.fillRect(0,0,685,400);
+        if(flash>12){
+          const lx = 200+Math.random()*280;
+          g.strokeStyle='#fffbe0'; g.lineWidth=5; g.beginPath();
+          g.moveTo(lx,0); g.lineTo(lx-30,90); g.lineTo(lx+10,90); g.lineTo(lx-40,200); g.lineTo(lx-5,200); g.lineTo(lx-45,330);
+          g.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
 const isDayNow = ()=>{ const h = new Date().getHours(); return h>=6 && h<18; };
 function applyDayNight(){
   const day = isDayNow();
-  $('winDay').style.opacity = day ? 1 : 0;
+  $('scene').classList.toggle('day', day);
   $('dayTint').style.opacity = day ? 1 : 0;
   $('sillDay').style.opacity = day ? 1 : 0;
   const d = new Date(), cd = $('calDate');
@@ -238,7 +321,7 @@ const ZONES = [
   { id:'desk', x:.680, y:.325, rx:.052, ry:.082 }, { id:'desk', x:.782, y:.578, rx:.118, ry:.168 },
 ];
 CONFIG.HINTS.forEach(([id,x,y])=>{ const d=document.createElement('div'); d.className='hint-hand'; d.dataset.id=id;
-  d.textContent='☝️'; d.style.left=(x*100)+'%'; d.style.top=(y*100)+'%'; d.style.fontSize='clamp(14px,2.3vw,23px)';
+  d.innerHTML='<img src="assets/hint-arrow.png" alt="">'; d.style.left=(x*100)+'%'; d.style.top=(y*100)+'%';
   $('hints').appendChild(d); });
 const WALK = { x0:.075, x1:.935, y0:.555, y1:.905 };
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
