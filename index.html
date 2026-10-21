@@ -17,12 +17,14 @@
   #panel h3{margin:0 0 10px;font-size:18px;color:#4a3a28}
   #panel .close{position:absolute;top:8px;right:12px;cursor:pointer;font-size:20px;color:#8a6f4d}
 
-  #welcome{position:fixed;inset:0;background:#0a0a18 url('assets/welcome-bg.png') center/contain no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;z-index:100;transition:opacity .8s;padding-top:8vh}
+  @font-face{font-family:'FusionPixel';src:url('https://cdn.jsdelivr.net/npm/fusion-pixel-font-12px-monospaced-zh_hans@1.0.0/dist/fusion-pixel-12px-monospaced-zh_hans.woff2') format('woff2');}
+  #welcome{position:fixed;inset:0;background:#0a0a18 url('assets/welcome-bg.png') center/contain no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:space-between;z-index:100;transition:opacity .8s;padding:10vh 0 8vh}
   #welcome.hide{opacity:0;pointer-events:none}
-  #welcome h1{color:#fff;font-size:42px;margin:0 0 8px;letter-spacing:12px;font-family:'Courier New',monospace;font-weight:900;text-shadow:3px 3px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000}
-  #welcome p{color:#c9c9d4;font-size:14px;margin:0 0 24px;letter-spacing:6px;font-family:'Courier New',monospace;text-shadow:2px 2px 0 #000}
-  #enterBtn{background:#c9a86a;color:#1a1a2a;border:3px solid #000;border-radius:0;padding:12px 44px;font-size:18px;cursor:pointer;letter-spacing:4px;font-family:'Courier New',monospace;font-weight:bold;box-shadow:4px 4px 0 #000}
-  #enterBtn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #000}
+  #welcome h1{color:#ffd97a;font-size:48px;margin:0;letter-spacing:16px;font-family:'FusionPixel','Courier New',monospace;text-shadow:4px 4px 0 #5a3a10}
+  #welcome .sub{color:#8a9ab8;font-size:16px;margin:12px 0 0;letter-spacing:8px;font-family:'FusionPixel','Courier New',monospace;text-shadow:2px 2px 0 #000}
+  #enterBtn{background:#2a2a3a;color:#ffd97a;border:3px solid #ffd97a;border-radius:0;padding:14px 56px;font-size:20px;cursor:pointer;letter-spacing:8px;font-family:'FusionPixel','Courier New',monospace;box-shadow:0 0 20px rgba(255,217,122,.3);image-rendering:pixelated}
+  #enterBtn:hover{background:#3a3a4a;box-shadow:0 0 30px rgba(255,217,122,.5)}
+  #enterBtn:active{transform:translateY(2px)}
   #infobar{position:fixed;left:0;right:0;bottom:0;background:rgba(20,20,35,.85);color:#c9c9d4;font-size:12px;text-align:center;padding:8px;z-index:5}
 </style>
 </head>
@@ -36,9 +38,8 @@
 </div>
 
 <div id="welcome">
-  <h1>像素房间</h1>
-  <p>PIXEL ROOM</p>
-  <button id="enterBtn">进 入</button>
+  <div><h1>像素房间</h1><div class="sub">★ PIXEL ROOM ★</div></div>
+  <button id="enterBtn">▶ 进入房间</button>
 </div>
 <div id="dlg"></div>
 <div id="panel"><span class="close" onclick="hidePanel()">✕</span><h3 id="panelTitle"></h3><div id="panelBody"></div></div>
