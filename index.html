@@ -20,7 +20,37 @@
            background:rgba(14,20,38,.55); color:#ffe9bb; font-size:19px; line-height:1; cursor:pointer; }
   #scene, #dialog { user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
   img { -webkit-user-drag:none; }
-  #bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; user-select:none; -webkit-user-drag:none; }
+  /* ===== 图层（从下到上）：底板 → 白天窗景 → 家具精灵 → 碟片/唱臂 → 琴键/辉光 → 日光罩 → 猫/人物 → 提示 → 面板 ===== */
+  #bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; user-select:none; -webkit-user-drag:none; z-index:1; }
+  #winDay { position:absolute; z-index:2; pointer-events:none; opacity:0; transition:opacity 1.4s ease; }
+  .furn { position:absolute; pointer-events:none; user-select:none; -webkit-user-drag:none; }
+  #recordGroup { position:absolute; z-index:67; pointer-events:none; }
+  #recordGroup .base { position:absolute; inset:0; width:100%; height:100%; }
+  #discWrap { position:absolute; left:70.54%; top:20.26%; width:32.86%; aspect-ratio:1; transform:translate(-50%,-50%) scaleY(.664); }
+  #disc { width:100%; height:100%; display:block; will-change:transform; }
+  #discSheen { position:absolute; inset:0; border-radius:50%; display:none;
+           background: conic-gradient(from 0deg,
+             rgba(255,255,255,0) 0deg, rgba(255,255,255,.16) 38deg, rgba(255,255,255,0) 84deg,
+             rgba(255,255,255,0) 180deg, rgba(255,255,255,.10) 214deg, rgba(255,255,255,0) 252deg); }
+  #discSheen.on { display:block; }
+  #tonearm { position:absolute; left:73.65%; top:16.38%; width:22.66%;
+             clip-path:polygon(50% 0%, 98% 0%, 98% 96%, 58% 96%, 10% 92%, 2% 60%, 38% 26%, 60% 14%); }
+  #pianoGlow { position:absolute; left:2.2%; top:24%; width:19%; height:42%; border-radius:50%; pointer-events:none; z-index:73;
+               background:radial-gradient(ellipse at center, rgba(255,205,110,.34), rgba(255,205,110,0) 68%); opacity:0; transition:opacity .8s; }
+  #pianoGlow.on { opacity:1; animation:glowPulse 3.2s ease-in-out infinite; }
+  @keyframes glowPulse { 0%,100%{ filter:brightness(1) } 50%{ filter:brightness(1.35) } }
+  #keysOverlay { position:absolute; left:8.58%; top:46.60%; width:11.29%; height:6.79%; z-index:73; pointer-events:none;
+                 transform:rotate(-3.2deg); display:flex; gap:0; }
+  #keysOverlay .kseg { flex:1; height:100%; border-radius:0 0 2px 2px; transition:all .12s ease; }
+  #keysOverlay .kseg.pressed { background:linear-gradient(rgba(28,18,8,.42), rgba(28,18,8,.12)); transform:translateY(9%); }
+  #calDate { position:absolute; left:72.62%; top:12.44%; width:5.78%; height:18.94%; z-index:33; pointer-events:none;
+             background:#f6eed9; border-radius:2px; overflow:hidden; display:flex; flex-direction:column; align-items:center;
+             box-shadow:inset 0 0 0 1px rgba(120,90,40,.25); }
+  #calDate .calM { background:#b8443c; color:#fff; width:100%; text-align:center; font-weight:700; line-height:1.5; }
+  #calDate .calD { color:#2e2a26; font-weight:800; line-height:1.12; }
+  #calDate .calW { color:#6b5a3e; line-height:1.2; }
+  #dayTint { position:absolute; inset:0; z-index:90; pointer-events:none; opacity:0; transition:opacity 1.4s ease;
+             background:linear-gradient(180deg, rgba(255,214,140,.16), rgba(255,196,110,.05) 55%, rgba(255,196,110,0)); }
   .sprite { position:absolute; transform:translate(-50%,-100%); pointer-events:none; }
   .sprite .fig { position:relative; width:100%; }
   .sprite .idle { display:block; width:100%; }
@@ -29,25 +59,14 @@
                     background:radial-gradient(ellipse at center, rgba(8,6,12,.55) 0%, rgba(8,6,12,.30) 55%, rgba(8,6,12,0) 72%); }
   .sprite .shadow::after { content:""; position:absolute; left:-40%; top:35%; width:130%; height:160%; border-radius:50%;
                     background:radial-gradient(ellipse at center, rgba(18,11,4,.30), rgba(18,11,4,0) 70%); transform:skewX(-22deg); filter:blur(3px); }
-  .hint-dot { position:absolute; width:11px; height:11px; margin:-5px 0 0 -5px; border-radius:50%; border:2px solid rgba(255,236,190,.9);
-              box-shadow:0 0 0 3px rgba(90,60,20,.35), inset 0 0 4px rgba(255,255,255,.6); z-index:30; pointer-events:none;
-              animation:pulse 2.4s ease-in-out infinite; transition:opacity .6s; }
-  @keyframes pulse { 0%,100%{ transform:scale(.8); opacity:.65 } 50%{ transform:scale(1.12); opacity:1 } }
-  .hint-dot.dim { opacity:.22; animation:none; }
-  #vinyl { position:absolute; left:62.22%; top:47.84%; width:7.85%; aspect-ratio:1; z-index:20; pointer-events:none;
-           transform:translate(-50%,-50%) scaleY(.42); display:none; }
-  #vinyl.on { display:block; }
-  #vinyl .face { width:100%; height:100%; border-radius:50%; animation:spin 1.8s linear infinite;
-           background: conic-gradient(from 0deg,
-             rgba(255,255,255,0) 0deg, rgba(255,255,255,.21) 38deg, rgba(255,255,255,0) 84deg,
-             rgba(255,255,255,0) 180deg, rgba(255,255,255,.14) 214deg, rgba(255,255,255,0) 252deg); }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  #pianoGlow { position:absolute; left:4.5%; top:30%; width:17%; height:38%; border-radius:50%; pointer-events:none; z-index:12;
-               background:radial-gradient(ellipse at center, rgba(255,205,110,.34), rgba(255,205,110,0) 68%); opacity:0; transition:opacity .8s; }
-  #pianoGlow.on { opacity:1; animation:glowPulse 3.2s ease-in-out infinite; }
-  @keyframes glowPulse { 0%,100%{ filter:brightness(1) } 50%{ filter:brightness(1.35) } }
-  .fnote { position:absolute; z-index:35; color:#ffd98a; font-size:clamp(13px,2.2vw,21px); pointer-events:none;
-           text-shadow:0 0 6px rgba(255,190,80,.8); animation:floatUp 3.4s ease-out forwards; }
+  /* 可点击提示：独立一层（#hints），内容与位置都在 CONFIG.HINTS 里，改这里或改配置都行 */
+  #hints { position:absolute; inset:0; z-index:95; pointer-events:none; }
+  .hint-hand { position:absolute; transform:translate(-50%,-50%); pointer-events:none; line-height:1;
+               filter:drop-shadow(0 2px 3px rgba(0,0,0,.55)); animation:hintBob 1.6s ease-in-out infinite alternate; transition:opacity .6s; }
+  @keyframes hintBob { from { margin-top:0; } to { margin-top:-5px; } }
+  .hint-hand.dim { opacity:.18; animation:none; }
+  .fnote { position:absolute; z-index:96; width:2.1%; pointer-events:none; filter:drop-shadow(0 0 5px rgba(255,190,80,.55));
+           animation:floatUp 3.4s ease-out forwards; }
   @keyframes floatUp { 0%{ transform:translate(0,0) rotate(-6deg); opacity:0 } 12%{ opacity:1 } 100%{ transform:translate(var(--dx,14px),-120px) rotate(10deg); opacity:0 } }
   /* 猫：独立图层（身体 + 尾巴分开），尾巴每隔几秒自己摇一下 */
   #cat { position:absolute; left:57.6%; top:82.4%; width:10.7%; aspect-ratio:1080/384; transform:translate(-50%,-100%);
@@ -61,7 +80,7 @@
   @keyframes tailwag { 0%,55% { transform:rotate(0deg) } 63% { transform:rotate(-4.2deg) } 71% { transform:rotate(2.2deg) }
          79% { transform:rotate(-3deg) } 87%,100% { transform:rotate(0deg) } }
   @keyframes catbreath { from { transform:scaleY(1) } to { transform:scaleY(1.014) } }
-  @media (prefers-reduced-motion: reduce) { #catTail, #catBody { animation:none; } }
+  @media (prefers-reduced-motion: reduce) { #catTail, #catBody, .hint-hand { animation:none; } }
   #dialog { margin:8px; background:#f7ecd2; border:3px solid #8a6b3f; border-radius:10px; color:#43331d;
             padding:9px 16px; font-size:clamp(13px,2.2vw,16.5px); display:flex; align-items:center; gap:10px; min-height:50px; flex:none; }
   #dialog .star { color:#d9a441; font-size:19px; flex:none; }
@@ -90,11 +109,33 @@
   <div id="sceneWrap">
   <div id="scene">
     <img id="bg" src="assets/room-bg.webp?v=6" alt="Rae 的像素房间">
+    <img id="winDay" src="assets/win-day.png" alt="" style="left:36.88%; top:0.51%; width:34.37%; height:41.15%;">
+    <!-- 家具图层：每件一个 <img>，位置/尺寸对着原画量好；要换哪件，只换那张图和它的 style -->
+    <img class="furn" src="assets/furn-cal.png" alt="" style="left:72.15%; top:11.52%; width:6.72%; z-index:32;">
+    <div id="calDate"><div class="calM"></div><div class="calD"></div><div class="calW"></div></div>
+    <img class="furn" src="assets/furn-board.png" alt="" style="left:80.94%; top:16.87%; width:15.11%; z-index:53;">
+    <img class="furn" src="assets/furn-shelf.png" alt="" style="left:12.34%; top:10.91%; width:20.67%; z-index:58;">
+    <img class="furn" src="assets/furn-topplant.png" alt="" style="left:17.21%; top:10.80%; width:5.57%; z-index:59;">
+    <img class="furn" src="assets/furn-topbluebox.png" alt="" style="left:22.28%; top:9.05%; width:4.82%; z-index:59;">
+    <img class="furn" src="assets/furn-topwoodbox.png" alt="" style="left:26.29%; top:6.38%; width:4.52%; z-index:59;">
+    <img class="furn" src="assets/furn-sill.png" alt="" style="left:40.79%; top:23.15%; width:6.93%; z-index:68;">
+    <img id="sillDay" class="furn" src="assets/furn-sill-day.png" alt="" style="left:40.79%; top:23.15%; width:6.93%; z-index:69; opacity:0; transition:opacity 1.4s ease;">
+    <img class="furn" src="assets/furn-piano.png" alt="" style="left:2.91%; top:26.54%; width:18.76%; z-index:72;">
+    <div id="recordGroup" style="left:50.18%; top:43.21%; width:17.71%; height:23.87%;">
+      <img class="base" src="assets/furn-record.png" alt="">
+      <div id="discWrap"><img id="disc" src="assets/disc.png" alt=""><div id="discSheen"></div></div>
+      <img id="tonearm" src="assets/furn-tonearm.png" alt="">
+    </div>
+    <img class="furn" src="assets/furn-desk.png" alt="" style="left:64.98%; top:26.54%; width:23.94%; z-index:75;">
+    <img class="furn" src="assets/furn-chair.png" alt="" style="left:68.44%; top:50.00%; width:10.39%; z-index:80;">
+    <img class="furn" src="assets/furn-plant.png" alt="" style="left:87.96%; top:47.53%; width:7.88%; z-index:76;">
     <div id="pianoGlow"></div>
-    <div id="vinyl"><div class="face"></div></div>
+    <div id="keysOverlay"></div>
+    <div id="dayTint"></div>
     <div id="boy" class="sprite"><div class="shadow"></div><div class="fig"><img class="idle" src="assets/boy-idle.png" alt=""><div class="walk" style="background-image:url(assets/boy-walk.png); aspect-ratio:243/460"></div></div></div>
     <div id="girl" class="sprite"><div class="shadow"></div><div class="fig"><img class="idle" src="assets/girl-idle.png" alt=""><div class="walk" style="background-image:url(assets/girl-walk.png); aspect-ratio:279/460"></div></div></div>
     <div id="cat"><img id="catTail" src="assets/cat-tail.png" alt=""><img id="catBody" src="assets/cat-body.png" alt=""></div>
+    <div id="hints"></div>
     <div id="panelWrap"><div id="panel">
       <button id="panelClose">✕</button>
       <h2 id="panelTitle"></h2>
@@ -108,23 +149,24 @@
 <audio id="bgm" loop preload="auto" src="assets/gymnopedie.mp3"></audio>
 
 <script>
-/* ================= 配置区：改文案只改这里 ================= */
+/* ================= 配置区：改文案、改提示位置只改这里 ================= */
 const CONFIG = {
   idleDialog: "点一点房间里的东西，小人会自己走过去。",
   objects: {
     shelf:  { dialog:"书架上摆着我喜欢的书。—— 想了解我，先从这里开始。", title:"📚 关于我",
               body:`<p>你好，我是 <b>Rae</b>。这里是我的像素小房间，也是我的个人主页。</p><p>（这一段是占位文案，等 Rae 本人发来正式介绍后替换。）</p>` },
     record: { dialog:"唱片机和钢琴是连着的：钢琴一响，黑胶就跟着转。", title:"🎵 音乐",
-              body:`<p>在这间屋里流淌的，是 Erik Satie 的《Gymnopédie No.1》。</p><p>点一点钢琴，就能让它响起来（或停下来）。</p>` },
+              body:`<p>在这间屋里流淌的，是 Erik Satie 的《Gymnopédie No.1》。</p><p>点一点钢琴，就能让它响起来（或停下来）。音乐响起时，唱片会转，琴键也会自己动。</p><p style="color:#97835c;font-size:12.5px">BGM - Erik Satie - Gymnopédies No.1（Musopen 公共版本）</p>` },
     desk:   { dialog:"书桌上有我的电脑。—— 要找我，从这里。", title:"✉️ 联系我",
               body:`<p>GitHub：<a href="https://github.com/raemyn24" target="_blank" rel="noopener">github.com/raemyn24</a></p>
                     <p>我的日报《头版》：<a href="https://raemyn24.github.io/" target="_blank" rel="noopener">raemyn24.github.io</a></p>
                     <p>（邮箱等联系方式等 Rae 确认后再放上来。）</p>` },
     pianoOn:  "♪ 钢琴自己弹了起来——Satie《Gymnopédie No.1》。再点一次钢琴可以停下。",
     pianoOff: "音乐停了，房间安静下来。",
-    pianoIdle:"一架旧钢琴。点它一下，它会自己弹起《Gymnopédie No.1》。",
-    cat:    "蓝猫睡得正香，尾巴尖偶尔动一下。—— 嘘，别吵它。",
-  }
+    board:  "软木板上钉满了大家的便签。—— 你也可以留一张。",
+  },
+  /* ☝️ 提示的位置（占场景的比例，想挪就改数字） */
+  HINTS: [ ['piano',.125,.395], ['shelf',.230,.300], ['window',.550,.165], ['record',.590,.450], ['desk',.790,.420], ['board',.885,.300] ],
 };
 /* ========================================================= */
 
@@ -132,12 +174,16 @@ document.addEventListener('contextmenu', e=>{ if(!e.target.closest('input, texta
 document.addEventListener('dragstart', e=>{ if(e.target.tagName === 'IMG') e.preventDefault(); });
 const $ = id=>document.getElementById(id);
 const scene = $('scene'), dialogText = $('dialogText');
-/* 舞台尺寸适配：场景按 1993:972 装进舞台（扣掉对话框高度） */
 function fit(){ const st = $('stage'); const W = st.clientWidth, H = st.clientHeight;
   const availH = H - $('dialog').offsetHeight - 26;
   let w = W - 16, h = w * 972/1993;
   if (h > availH) { h = availH; w = h * 1993/972; }
-  scene.style.width = w + 'px'; scene.style.height = h + 'px'; }
+  scene.style.width = w + 'px'; scene.style.height = h + 'px';
+  const cd = $('calDate');
+  cd.querySelector('.calM').style.fontSize = (w*.0115)+'px';
+  cd.querySelector('.calD').style.fontSize = (w*.030)+'px';
+  cd.querySelector('.calW').style.fontSize = (w*.0105)+'px';
+}
 addEventListener('resize', fit);
 if (screen.orientation) screen.orientation.addEventListener('change', ()=>setTimeout(fit, 80));
 addEventListener('load', ()=>{ fit(); setTimeout(fit, 300); });
@@ -163,37 +209,50 @@ fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.155
     weather = { temp:Math.round(d.current.temperature_2m), desc:WMO[c]||'多云', kind:wmoKind(c),
                 hi:Math.round(d.daily.temperature_2m_max[0]), lo:Math.round(d.daily.temperature_2m_min[0]),
                 hum:Math.round(d.current.relative_humidity_2m), ok:true }; }).catch(()=>{});
-const isDayNow = ()=>{ const h = new Date().getHours()+new Date().getMinutes()/60; return h>=6.5 && h<18.5; };
 
-/* ---------- 场景坐标（占场景宽/高的比例） ---------- */
-const STAND = { piano:{x:.190,y:.742}, shelf:{x:.300,y:.618}, window:{x:.468,y:.578}, record:{x:.590,y:.722},
-                desk:{x:.845,y:.838}, board:{x:.878,y:.812}, cat:{x:.492,y:.800} };
+/* ---------- 昼夜（6:00 天亮，18:00 天黑）+ 日历真实日期 ---------- */
+const isDayNow = ()=>{ const h = new Date().getHours(); return h>=6 && h<18; };
+function applyDayNight(){
+  const day = isDayNow();
+  $('winDay').style.opacity = day ? 1 : 0;
+  $('dayTint').style.opacity = day ? 1 : 0;
+  $('sillDay').style.opacity = day ? 1 : 0;
+  const d = new Date(), cd = $('calDate');
+  cd.querySelector('.calM').textContent = (d.getMonth()+1) + '月';
+  cd.querySelector('.calD').textContent = d.getDate();
+  cd.querySelector('.calW').textContent = '星期' + '日一二三四五六'[d.getDay()];
+}
+applyDayNight(); setInterval(applyDayNight, 60000);
+
+/* ---------- 场景坐标（占场景宽/高的比例；v3 按原画重新量准） ---------- */
+const STAND = { piano:{x:.150,y:.748}, shelf:{x:.270,y:.620}, window:{x:.485,y:.600}, record:{x:.590,y:.700},
+                desk:{x:.815,y:.795}, board:{x:.872,y:.818} };
 const ZONES = [
-  { id:'piano', x:.125, y:.44, rx:.088, ry:.21 }, { id:'shelf', x:.258, y:.35, rx:.088, ry:.25 },
-  { id:'window', x:.550, y:.28, rx:.158, ry:.20 }, { id:'record', x:.615, y:.50, rx:.078, ry:.11 },
-  { id:'window', x:.772, y:.285, rx:.038, ry:.08 }, { id:'desk', x:.797, y:.52, rx:.108, ry:.16 },
-  { id:'board', x:.880, y:.375, rx:.078, ry:.17 }, { id:'cat', x:.576, y:.788, rx:.064, ry:.044 },
+  { id:'piano', x:.123, y:.492, rx:.108, ry:.240 }, { id:'shelf', x:.227, y:.342, rx:.112, ry:.240 },
+  { id:'window', x:.540, y:.215, rx:.158, ry:.200 }, { id:'window', x:.755, y:.215, rx:.037, ry:.100 },
+  { id:'record', x:.590, y:.551, rx:.095, ry:.128 }, { id:'board', x:.885, y:.352, rx:.082, ry:.183 },
+  { id:'desk', x:.680, y:.325, rx:.052, ry:.082 }, { id:'desk', x:.782, y:.578, rx:.118, ry:.168 },
 ];
-const HINTS = [ ['piano',.148,.330], ['shelf',.262,.185], ['window',.550,.478], ['record',.617,.428], ['desk',.800,.415], ['board',.880,.512] ];
-HINTS.forEach(([id,x,y])=>{ const d=document.createElement('div'); d.className='hint-dot'; d.dataset.id=id;
-  d.style.left=(x*100)+'%'; d.style.top=(y*100)+'%'; scene.appendChild(d); });
+CONFIG.HINTS.forEach(([id,x,y])=>{ const d=document.createElement('div'); d.className='hint-hand'; d.dataset.id=id;
+  d.textContent='☝️'; d.style.left=(x*100)+'%'; d.style.top=(y*100)+'%'; d.style.fontSize='clamp(14px,2.3vw,23px)';
+  $('hints').appendChild(d); });
 const WALK = { x0:.075, x1:.935, y0:.555, y1:.905 };
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 /* ---------- 角色与移动（帧动画 + 避障寻路） ---------- */
-const OBSTACLES = [ // 全部按底图实测的家具落地边（2026-10-21 逐块放大测量）
-  {x0:.238,y0:.20,x1:.438,y1:.575},  // 书架
-  {x0:.034,y0:.40,x1:.238,y1:.700},  // 钢琴主体（左侧板落到 .700）
-  {x0:.138,y0:.570,x1:.238,y1:.722}, // 琴凳（凳腿落到 .722）
-  {x0:.500,y0:.40,x1:.680,y1:.695},  // 唱片柜（柜身前沿斜线，最低 .695）
-  {x0:.660,y0:.40,x1:.900,y1:.790},  // 书桌（前沿斜线，右腿落到 .782）
-  {x0:.680,y0:.560,x1:.840,y1:.805}, // 椅子（轮子落到 .80）
-  {x0:.890,y0:.520,x1:.968,y1:.755}, // 绿植（花盆落到 .748）
-  {x0:.518,y0:.742,x1:.634,y1:.830}, // 蓝猫（独立 DOM 图层，别踩它）
+const OBSTACLES = [ // v3 按程序定位的真实落地边
+  {x0:.123,y0:.205,x1:.330,y1:.576},  // 书架
+  {x0:.029,y0:.395,x1:.217,y1:.705},  // 钢琴主体
+  {x0:.110,y0:.535,x1:.195,y1:.705},  // 琴凳
+  {x0:.502,y0:.425,x1:.679,y1:.671},  // 唱片柜
+  {x0:.650,y0:.415,x1:.889,y1:.745},  // 书桌
+  {x0:.685,y0:.545,x1:.788,y1:.805},  // 椅子
+  {x0:.880,y0:.505,x1:.958,y1:.762},  // 落地绿植
+  {x0:.518,y0:.742,x1:.634,y1:.830},  // 蓝猫（独立图层，别踩它）
 ];
 const NODES = [[.190,.758],[.255,.668],[.368,.635],[.455,.622],[.560,.718],[.700,.835],[.200,.800],
                [.400,.805],[.600,.848],[.780,.848],[.908,.848],[.475,.718],[.648,.758],[.615,.720],
-               [.655,.855],[.860,.860],[.838,.848]];
+               [.655,.855],[.860,.860],[.838,.848],[.560,.870],[.700,.860]];
 const INFL = .010;
 function segHitsRect(x1,y1,x2,y2,r){
   const dx=x2-x1, dy=y2-y1; let t0=0, t1=1;
@@ -204,7 +263,7 @@ function segHitsRect(x1,y1,x2,y2,r){
 }
 const segClear = (a,b)=> !OBSTACLES.some(r=> segHitsRect(a[0],a[1],b[0],b[1],r));
 const inObstacle = (x,y,pad=0)=> OBSTACLES.some(r=> x>r.x0-pad && x<r.x1+pad && y>r.y0-pad && y<r.y1+pad);
-function pushOut(x,y){ // 落在家具里时，环形向外找最近的空地
+function pushOut(x,y){
   if(!inObstacle(x,y,.004)) return [x,y];
   for(const r of [.025,.05,.08,.11,.15]){
     for(let k=0;k<8;k++){ const a = k*Math.PI/4, px = x+Math.cos(a)*r, py = y+Math.sin(a)*r;
@@ -227,9 +286,9 @@ function planPath(sx,sy,gx,gy){
       if(segClear(pts[u],pts[v])){ const w=Math.hypot(pts[u][0]-pts[v][0],pts[u][1]-pts[v][1]);
         if(dist[u]+w<dist[v]){ dist[v]=dist[u]+w; prev[v]=u; } } }
   }
-  if(!done[gi] && dist[gi]===Infinity) return []; // 无路可走：原地不动，不直线硬闯
+  if(!done[gi] && dist[gi]===Infinity) return [];
   const path=[]; let cur=gi; while(cur>0){ path.unshift(pts[cur]); cur=prev[cur]; if(cur<0) break; }
-  if(startPushed && path.length) path.unshift([sx,sy]); // 起点在家具里时，先走出到推出点
+  if(startPushed && path.length) path.unshift([sx,sy]);
   return path;
 }
 function makeChar(el, wPct, x, y){
@@ -254,7 +313,6 @@ function followPath(c, dt, baseSpeed){
   const [tx,ty] = c.path[0];
   const dx = tx-c.x, dy = ty-c.y, dist = Math.hypot(dx,dy);
   const isFinal = c.path.length===1;
-  // 起步加速、临近终点减速，消除滑行感
   let target = 1;
   if(isFinal && dist < .075) target = Math.max(.3, dist/.075);
   c.speedF += (target - c.speedF) * Math.min(1, dt*7);
@@ -271,7 +329,6 @@ let lastT = performance.now();
 function loop(now){ const dt = Math.min(.05,(now-lastT)/1000); lastT = now;
   const arrived = followPath(boy, dt, .30);
   if(arrived && boy.action){ const a = boy.action; boy.action = null; setTimeout(()=>doAction(a), 160); }
-  // 女生：定期重新寻路到男孩身侧，不再拖着轨迹飘
   girlPlanT -= dt;
   const homeCands = [[boy.x-.054*boy.face, boy.y+.014],[boy.x+.054*boy.face, boy.y+.014],
                      [boy.x-.054*boy.face, boy.y+.062],[boy.x+.054*boy.face, boy.y+.062],[boy.x, boy.y+.07]];
@@ -287,43 +344,65 @@ function loop(now){ const dt = Math.min(.05,(now-lastT)/1000); lastT = now;
 }
 requestAnimationFrame(loop);
 
-/* ---------- 点按 ---------- */
+/* ---------- 点按（所有交互都等小人走到才触发） ---------- */
+let panelOpen = false;
 scene.addEventListener('click', e=>{
   if(e.target.closest('#panelWrap') || panelOpen) return;
   const r = scene.getBoundingClientRect();
   const vx = (e.clientX-r.left)/r.width, vy = (e.clientY-r.top)/r.height;
-  /* 竖屏时舞台被旋转了 90°，把视觉坐标换回场景坐标 */
   const rotated = matchMedia('(orientation: portrait)').matches;
   const px = rotated ? vy : vx, py = rotated ? 1 - vx : vy;
   let hit = null;
   for(const z of ZONES){ if(((px-z.x)/z.rx)**2 + ((py-z.y)/z.ry)**2 <= 1){ hit = z.id; break; } }
-  document.querySelectorAll('.hint-dot').forEach(d=>d.classList.add('dim'));
+  document.querySelectorAll('.hint-hand').forEach(d=>d.classList.add('dim'));
   if(hit){ const s = STAND[hit]; boy.path = planPath(boy.x, boy.y, s.x, s.y); boy.action = hit; }
   else { boy.path = planPath(boy.x, boy.y, clamp(px, WALK.x0, WALK.x1), clamp(py, WALK.y0, WALK.y1)); boy.action = null; }
 });
 
 /* ---------- 动作与面板 ---------- */
-let panelOpen = false, musicOn = false, noteTimer = null;
+let musicOn = false, noteTimer = null, keysTimer = null;
 const bgm = $('bgm');
 function doAction(id){
   if(id==='piano'){ toggleMusic(); return; }
-  if(id==='cat'){ say(CONFIG.objects.cat); return; }
   if(id==='window'){ openWindowPanel(); return; }
+  if(id==='board'){ say(CONFIG.objects.board); openPanel('📌 留言板', guestbookHTML()); return; }
   const obj = CONFIG.objects[id]; if(!obj) return;
   say(obj.dialog); openPanel(obj.title, obj.body);
 }
 function say(t){ dialogText.textContent = t; }
 function toggleMusic(){
-  if(musicOn){ bgm.pause(); musicOn=false; $('pianoGlow').classList.remove('on'); $('vinyl').classList.remove('on');
-    clearInterval(noteTimer); say(CONFIG.objects.pianoOff); }
+  if(musicOn){ bgm.pause(); musicOn=false; $('pianoGlow').classList.remove('on'); $('discSheen').classList.remove('on');
+    clearInterval(noteTimer); stopKeys(); say(CONFIG.objects.pianoOff); }
   else { say(CONFIG.objects.pianoOn);
-    bgm.play().then(()=>{ musicOn=true; $('pianoGlow').classList.add('on'); $('vinyl').classList.add('on');
-      spawnNote(); noteTimer = setInterval(spawnNote, 800); })
+    bgm.play().then(()=>{ musicOn=true; $('pianoGlow').classList.add('on'); $('discSheen').classList.add('on');
+      spawnNote(); noteTimer = setInterval(spawnNote, 800); startKeys(); })
     .catch(()=> say('咦，音乐没能播放（浏览器拦了一下），再点一次钢琴试试？')); }
 }
-function spawnNote(){ const n = document.createElement('span'); n.className='fnote'; n.textContent = Math.random()<.5?'♪':'♫';
-  n.style.left = (10.5+Math.random()*7)+'%'; n.style.top = '36%'; n.style.setProperty('--dx', (Math.random()*36-10)+'px');
+/* 像素音符（图片，不再是字体符号） */
+function spawnNote(){ const n = document.createElement('img'); n.className='fnote';
+  n.src = Math.random()<.5 ? 'assets/note1.png' : 'assets/note2.png';
+  n.style.left = (10.5+Math.random()*7)+'%'; n.style.top = '34%'; n.style.setProperty('--dx', (Math.random()*36-10)+'px');
   scene.appendChild(n); setTimeout(()=>n.remove(), 3500); }
+/* 琴键跟弹：慢板节奏，随机和弦式按下几个键 */
+const KEYN = 12, keySegs = [];
+for(let i=0;i<KEYN;i++){ const s = document.createElement('div'); s.className='kseg'; $('keysOverlay').appendChild(s); keySegs.push(s); }
+function pressKeys(){
+  const base = 2 + Math.floor(Math.random()*7);
+  const picks = [base, base+2, base+4].filter(i=>i<KEYN && Math.random()<.8);
+  picks.forEach(i=>keySegs[i].classList.add('pressed'));
+  setTimeout(()=>picks.forEach(i=>keySegs[i].classList.remove('pressed')), 420 + Math.random()*380);
+}
+function startKeys(){ pressKeys(); keysTimer = setInterval(pressKeys, 950 + Math.random()*500); }
+function stopKeys(){ clearInterval(keysTimer); keySegs.forEach(s=>s.classList.remove('pressed')); }
+/* 黑胶：真实转速的加速/减速（33⅓ 转 ≈ 3.49 rad/s） */
+let discVel = 0, discAng = 0, discLast = performance.now();
+function discLoop(now){ const dt = Math.min(.05,(now-discLast)/1000); discLast = now;
+  const target = musicOn ? 3.491 : 0;
+  discVel += (target - discVel) * Math.min(1, dt * (musicOn ? .9 : .55));
+  if(Math.abs(discVel) > .001 || musicOn){ discAng = (discAng + discVel*dt) % (Math.PI*2);
+    $('disc').style.transform = `rotate(${discAng}rad)`; }
+  requestAnimationFrame(discLoop); }
+requestAnimationFrame(discLoop);
 function openPanel(title, html){ $('panelTitle').textContent = title; $('panelBody').innerHTML = html;
   $('panelWrap').style.display='flex'; panelOpen = true; }
 function closePanel(){ $('panelWrap').style.display='none'; panelOpen = false; stopWx(); }
@@ -362,14 +441,12 @@ function startWx(){
     city.forEach(b=> g.fillRect(b[0],b[1],b[2],b[3]));
     if(!day){ g.fillStyle='#ffca7a'; for(let i=0;i<70;i++){ const bx=14+((i*53)%612), by=232+((i*29)%104); g.fillRect(bx,by,3.4,3.4); } }
     g.fillStyle = day ? '#7d94b5' : '#0a1026'; g.fillRect(0,336,640,24);
-    // 天气粒子（雨/雪）
     if(kind==='rain'){ g.strokeStyle='rgba(195,220,255,.65)'; g.lineWidth=1.6; g.beginPath();
       parts.forEach(p=>{ p.y+=p.v*2.4; p.x-=p.v*.7; if(p.y>360){p.y=-8; p.x=Math.random()*680;} if(p.x<-10)p.x=650;
         g.moveTo(p.x,p.y); g.lineTo(p.x-3,p.y+13); }); g.stroke(); }
     if(kind==='snow'){ g.fillStyle='rgba(255,255,255,.9)';
       parts.forEach(p=>{ p.y+=p.v; p.x+=Math.sin(t/600+p.ph)*.5; if(p.y>360){p.y=-4; p.x=Math.random()*640;}
         g.beginPath(); g.arc(p.x,p.y,2.1,0,7); g.fill(); }); }
-    // 窗框
     g.strokeStyle='#5d4426'; g.lineWidth=14; g.strokeRect(0,0,640,360); g.lineWidth=7;
     g.beginPath(); g.moveTo(320,0); g.lineTo(320,360); g.moveTo(0,180); g.lineTo(640,180); g.stroke();
     wxRAF = requestAnimationFrame(frame);
@@ -397,18 +474,11 @@ function guestbookHTML(){
     </form>
     <p class="hint">试玩版说明：留言目前只保存在你自己的浏览器里；正式版会接入留言服务，所有访客都能看到（且会先审后发）。</p>`;
 }
-const _openPanel = openPanel;
-openPanel = function(title, html){ _openPanel(title, html); };
 document.addEventListener('submit', e=>{
   if(e.target && e.target.id==='gbForm'){ e.preventDefault();
     saveNote($('gbName').value.trim()||'匿名访客', $('gbText').value.trim());
     openPanel('📌 留言板', guestbookHTML()); }
 });
-const _doAction = doAction;
-doAction = function(id){
-  if(id==='board'){ say('软木板上钉满了大家的便签。—— 你也可以留一张。'); openPanel('📌 留言板', guestbookHTML()); return; }
-  _doAction(id);
-};
 </script>
 </body>
 </html>
