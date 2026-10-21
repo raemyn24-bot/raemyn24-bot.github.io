@@ -47,7 +47,7 @@
 
 <div id="welcome">
   <div><h1>像素房间</h1><div class="sub">★ PIXEL ROOM ★</div></div>
-  <button id="enterBtn">▶ 进入房间</button>
+  <button id="enterBtn" onclick="enterRoom()">▶ 进入房间</button>
 </div>
 <div id="dlg"></div>
 <div id="panel"><span class="close" onclick="hidePanel()">✕</span><h3 id="panelTitle"></h3><div id="panelBody"></div></div>
@@ -105,11 +105,11 @@ say('点一点房间里的东西试试',3500);
 document.addEventListener('gesturestart',e=>e.preventDefault());
 document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault();},{passive:false});
 
-document.getElementById('enterBtn').addEventListener('click',function(){
-  document.getElementById('welcome').classList.add('hide');
+function enterRoom(){
+  var w=document.getElementById('welcome');
+  if(w){w.classList.add('hide');setTimeout(function(){var w2=document.getElementById('welcome');if(w2)w2.remove();},900);}
   startMusic();
-  setTimeout(function(){var w=document.getElementById('welcome');if(w)w.remove();},900);
-});
+}
 
 </script>
 </body>
