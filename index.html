@@ -10,10 +10,8 @@
   #room{width:min(100vw,205.04vh);height:min(100vh,48.77vw);display:block;touch-action:manipulation}
   .tri{animation:triBob 1.6s ease-in-out infinite;cursor:pointer}
   .star{animation:twinkle 2.4s ease-in-out infinite}
-  #catTail{transform-box:fill-box;transform-origin:15% 50%;animation:tailWagOcc 8s ease-in-out infinite}
-  @keyframes tailWagOcc{0%,25%{transform:rotate(-8deg)}12%{transform:rotate(10deg)}25%,100%{transform:rotate(0deg)}}
-  #catTail{transform-box:fill-box;transform-origin:15% 50%;animation:tailWagOcc 8s ease-in-out infinite}
-  @keyframes tailWagOcc{0%,25%{transform:rotate(-8deg)}12%{transform:rotate(10deg)}25%,100%{transform:rotate(0deg)}}
+
+
   @keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
   @keyframes triBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
   #dialog{position:fixed;left:50%;transform:translateX(-50%);bottom:58px;width:min(94vw,900px);z-index:50;background:#f7efdc;border:3px solid #7a5c3e;border-radius:12px;padding:10px 16px;font-size:16px;color:#4a3826;box-shadow:0 4px 18px rgba(0,0,0,.45);cursor:pointer}
@@ -44,18 +42,8 @@
   
   
   
-  <g id="cat">
-    <ellipse cx="1050" cy="688" rx="90" ry="14" fill="rgba(0,0,0,.25)"/>
-    <ellipse cx="1050" cy="660" rx="75" ry="32" fill="#4a4a55"/>
-    <circle cx="985" cy="648" r="26" fill="#4a4a55"/>
-    <polygon points="968,630 974,610 986,626" fill="#4a4a55"/>
-    <polygon points="992,626 1004,610 1008,630" fill="#4a4a55"/>
-    <circle cx="978" cy="646" r="3" fill="#1a1a20"/>
-    <circle cx="994" cy="646" r="3" fill="#1a1a20"/>
-    <g id="catTail">
-      <path d="M1115,665 q35,-8 45,-28 q6,-12 -4,-16" stroke="#4a4a55" stroke-width="14" fill="none" stroke-linecap="round"/>
     </g>
-  </g>
+  <image id="catImg" href="assets/cat.png" x="727" y="425" width="190" height="140"/>
   <g id="tris"></g>
   <g id="zones" fill="#fff" opacity="0">
     <rect data-id="piano" x="80" y="400" width="320" height="320"/>
