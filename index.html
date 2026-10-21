@@ -59,25 +59,15 @@
     <line x1="710" y1="175" x2="1330" y2="175" stroke="#5a3d24" stroke-width="10"/>
   </g>
 
-  <!-- 钢琴键：12键，透明覆盖（150,450)-(350,480)，按下时高亮 -->
-  <g id="keys"></g>
+  <!-- 钢琴键已 baked，播放时只显示音符 -->
 
   <!-- 唱片：带阴影 -->
   <ellipse id="vinylShadow" cx="1249" cy="510" rx="58" ry="10" fill="rgba(0,0,0,.35)"/>
   <image id="vinyl" href="assets/disc.png" x="1191" y="429" width="116" height="77"/>
 
-  <!-- 日历：挂墙，无文字标签，单层 -->
-  <g id="cal">
-    <circle cx="1505" cy="88" r="6" fill="#4a4a4a" stroke="#222" stroke-width="2"/>
-    <line x1="1505" y1="88" x2="1478" y2="118" stroke="#8a6d4a" stroke-width="3"/>
-    <line x1="1505" y1="88" x2="1532" y2="118" stroke="#8a6d4a" stroke-width="3"/>
-    <rect x="1445" y="120" width="120" height="180" rx="8" fill="#f7f1e3" stroke="#7a5c3e" stroke-width="5"/>
-    <rect x="1445" y="120" width="120" height="42" fill="#c0392b"/>
-  </g>
+  <!-- 日历已 baked 进底图 -->
 
-  <!-- 猫：无粉色，全灰 -->
-  <ellipse class="shadow" cx="1148" cy="800" rx="110" ry="18"/>
-  <image id="cat" href="assets/cat-body.png" x="1032" y="700" width="233" height="106"/>
+  <!-- 猫已 baked 进底图 -->
 
   <!-- 人物 -->
   <ellipse id="girlShadow" class="shadow" cx="0" cy="0" rx="34" ry="10"/>
@@ -130,17 +120,8 @@ function toggleMusic(){
   if(playing){ bgm.play().catch(()=>{}); $('vinyl').classList.add('spin'); setMusicNote(boy.x, boy.y-190, true); startPianoAuto(); say('Rae','♪ 钢琴自己弹起来了'); }
   else { bgm.pause(); $('vinyl').classList.remove('spin'); setMusicNote(0,0,false); stopPianoAuto(); say('Rae','音乐停了。'); }
 }
-function startPianoAuto(){
-  stopPianoAuto();
-  const chords = [[0,4,7],[2,5,9],[4,7,11],[5,9,0]];
-  let ci = 0;
-  pianoTimer = setInterval(()=>{
-    const ch = chords[ci++ % chords.length];
-    ch.forEach(k=>pressKey(k,true));
-    setTimeout(()=>ch.forEach(k=>pressKey(k,false)), 700);
-  }, 1100);
-}
-function stopPianoAuto(){ if(pianoTimer){ clearInterval(pianoTimer); pianoTimer=null; } KEYS.els.forEach((_,i)=>pressKey(i,false)); }
+function startPianoAuto(){ stopPianoAuto(); }
+function stopPianoAuto(){ if(pianoTimer){ clearInterval(pianoTimer); pianoTimer=null; } }
 
 /* ---------- 面板内容 ---------- */
 const PANELS = {
@@ -277,23 +258,6 @@ function walkGirl(){
   requestAnimationFrame(step);
 }
 
-/* ---------- 钢琴键 ---------- */
-const KEYS_NIGHT = { x0:150, y0:450, x1:350, y1:480 };
-const KEYS = { n:12, els:[], cur:null };
-function buildKeys(pos){
-  const g = $('keys'); g.innerHTML=''; KEYS.els=[];
-  const kw = (pos.x1-pos.x0)/KEYS.n, kh = pos.y1-pos.y0;
-  for(let i=0;i<KEYS.n;i++){
-    const r = el('rect',{ x:pos.x0+i*kw+1, y:pos.y0, width:kw-2, height:kh, fill:'#c9a86a', 'fill-opacity':0, stroke:'none' },g);
-    KEYS.els.push(r);
-  }
-  KEYS.cur = pos;
-}
-function pressKey(i, down){
-  const r = KEYS.els[i]; if(!r || !KEYS.cur) return;
-  r.setAttribute('fill-opacity', down ? 0.7 : 0);
-  r.setAttribute('y', down ? KEYS.cur.y0+4 : KEYS.cur.y0);
-}
 
 /* ---------- 唱片 ---------- */
 const VINYL_NIGHT = { x:1191, y:429, w:116, h:77 };
@@ -385,7 +349,7 @@ function drawWeather(){
 
 /* ---------- 初始化 ---------- */
 place(boy); place(girl);
-buildKeys(KEYS_NIGHT);
+
 placeVinyl(VINYL_NIGHT);
 drawWeather();
 
