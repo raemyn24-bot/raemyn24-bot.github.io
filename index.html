@@ -62,8 +62,10 @@
   /* 可点击提示：独立一层（#hints），内容与位置都在 CONFIG.HINTS 里，改这里或改配置都行 */
   #hints { position:absolute; inset:0; z-index:95; pointer-events:none; }
   .hint-hand { position:absolute; transform:translate(-50%,-50%); pointer-events:none; line-height:1;
-               filter:drop-shadow(0 2px 3px rgba(0,0,0,.55)); animation:hintBob 1.6s ease-in-out infinite alternate; transition:opacity .6s; }
-  @keyframes hintBob { from { margin-top:0; } to { margin-top:-5px; } }
+               filter:drop-shadow(0 2px 3px rgba(0,0,0,.55)); animation:hintTap 2s ease-in-out infinite; transition:opacity .6s; }
+  @keyframes hintTap { 0%,100% { transform:translate(-50%,-50%) translateY(0) scale(1); }
+    10% { transform:translate(-50%,-50%) translateY(8px) scale(.9); }
+    24% { transform:translate(-50%,-50%) translateY(0) scale(1); } }
   .hint-hand.dim { opacity:.18; animation:none; }
   .fnote { position:absolute; z-index:96; width:2.1%; pointer-events:none; filter:drop-shadow(0 0 5px rgba(255,190,80,.55));
            animation:floatUp 3.4s ease-out forwards; }
