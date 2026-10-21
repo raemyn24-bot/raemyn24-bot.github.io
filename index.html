@@ -1,583 +1,399 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Rae 的房间</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Rae 的像素小屋</title>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html, body { height:100%; }
-  body { background:#070b16; overflow:hidden; font-family:"PingFang SC","Microsoft YaHei",sans-serif; }
-  #stage { position:fixed; left:50%; top:50%; width:100dvw; height:100dvh; transform:translate(-50%,-50%);
-           display:flex; flex-direction:column; background:#0b1020; }
-  @media (orientation: portrait) {
-    /* 竖屏时整台旋转 90°：等效强制横屏（点按坐标在脚本里同步换算） */
-    #stage { width:100dvh; height:100dvw; transform:translate(-50%,-50%) rotate(90deg); }
-  }
-  #sceneWrap { flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:8px 8px 0; }
-  #scene { position:relative; border-radius:6px; overflow:hidden; background:#10182e; touch-action:manipulation; flex:none; aspect-ratio:1993/972; }
-  #fsBtn { position:absolute; right:12px; top:12px; z-index:300; width:38px; height:38px; border-radius:50%; border:2px solid rgba(255,236,190,.5);
-           background:rgba(14,20,38,.55); color:#ffe9bb; font-size:19px; line-height:1; cursor:pointer; }
-  #scene, #dialog { user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
-  img { -webkit-user-drag:none; }
-  /* ===== 图层（从下到上）：底板 → 白天窗景 → 家具精灵 → 碟片/唱臂 → 琴键/辉光 → 日光罩 → 猫/人物 → 提示 → 面板 ===== */
-  #bg { position:absolute; inset:0; width:100%; height:100%; user-select:none; -webkit-user-drag:none; z-index:1; image-rendering:pixelated; }
-  #winDay { position:absolute; z-index:2; pointer-events:none; opacity:0; transition:opacity 1.4s ease; }
-  .furn { position:absolute; pointer-events:none; user-select:none; -webkit-user-drag:none; image-rendering:pixelated; }
-  #winDay { image-rendering:pixelated; }
-  #recordGroup { position:absolute; z-index:67; pointer-events:none; }
-  #recordGroup .base { position:absolute; inset:0; width:100%; height:100%; }
-  #discWrap { position:absolute; left:70.54%; top:20.26%; width:32.86%; aspect-ratio:1; transform:translate(-50%,-50%) scaleY(.664); }
-  #disc { width:100%; height:100%; display:block; will-change:transform; }
-  #discSheen { position:absolute; inset:0; border-radius:50%; display:none;
-           background: conic-gradient(from 0deg,
-             rgba(255,255,255,0) 0deg, rgba(255,255,255,.16) 38deg, rgba(255,255,255,0) 84deg,
-             rgba(255,255,255,0) 180deg, rgba(255,255,255,.10) 214deg, rgba(255,255,255,0) 252deg); }
-  #discSheen.on { display:block; }
-  #tonearm { position:absolute; left:73.65%; top:16.38%; width:22.66%;
-             clip-path:polygon(50% 0%, 98% 0%, 98% 96%, 58% 96%, 10% 92%, 2% 60%, 38% 26%, 60% 14%); }
-  #pianoGlow { position:absolute; left:2.2%; top:24%; width:19%; height:42%; border-radius:50%; pointer-events:none; z-index:73;
-               background:radial-gradient(ellipse at center, rgba(255,205,110,.34), rgba(255,205,110,0) 68%); opacity:0; transition:opacity .8s; }
-  #pianoGlow.on { opacity:1; animation:glowPulse 3.2s ease-in-out infinite; }
-  @keyframes glowPulse { 0%,100%{ filter:brightness(1) } 50%{ filter:brightness(1.35) } }
-  #keysOverlay { position:absolute; left:8.58%; top:46.60%; width:11.29%; height:6.79%; z-index:73; pointer-events:none;
-                 transform:rotate(-3.2deg); display:flex; gap:0; }
-  #keysOverlay .kseg { flex:1; height:100%; border-radius:0 0 2px 2px; transition:all .12s ease; }
-  #keysOverlay .kseg.pressed { background:linear-gradient(rgba(28,18,8,.42), rgba(28,18,8,.12)); transform:translateY(9%); }
-  #calDate { position:absolute; left:72.62%; top:12.44%; width:5.78%; height:18.94%; z-index:33; pointer-events:none;
-             background:#f6eed9; border-radius:2px; overflow:hidden; display:flex; flex-direction:column; align-items:center;
-             box-shadow:inset 0 0 0 1px rgba(120,90,40,.25); }
-  #calDate .calM { background:#b8443c; color:#fff; width:100%; text-align:center; font-weight:700; line-height:1.5; }
-  #calDate .calD { color:#2e2a26; font-weight:800; line-height:1.12; }
-  #calDate .calW { color:#6b5a3e; line-height:1.2; }
-  #dayTint { position:absolute; inset:0; z-index:90; pointer-events:none; opacity:0; transition:opacity 1.4s ease;
-             background:linear-gradient(180deg, rgba(255,244,220,.42), rgba(255,228,170,.22) 55%, rgba(255,220,150,.10)); }
-  .sprite { position:absolute; transform:translate(-50%,-100%); pointer-events:none; }
-  .sprite .fig { position:relative; width:100%; }
-  .sprite .idle { display:block; width:100%; }
-  .sprite .walk { display:none; width:100%; background-repeat:no-repeat; background-size:400% 100%; }
-  .sprite .shadow { position:absolute; left:50%; bottom:-4%; width:88%; height:12%; transform:translateX(-50%); border-radius:50%;
-                    background:radial-gradient(ellipse at center, rgba(8,6,12,.55) 0%, rgba(8,6,12,.30) 55%, rgba(8,6,12,0) 72%); }
-  .sprite .shadow::after { content:""; position:absolute; left:-40%; top:35%; width:130%; height:160%; border-radius:50%;
-                    background:radial-gradient(ellipse at center, rgba(18,11,4,.30), rgba(18,11,4,0) 70%); transform:skewX(-22deg); filter:blur(3px); }
-  /* 可点击提示：独立一层（#hints），内容与位置都在 CONFIG.HINTS 里，改这里或改配置都行 */
-  #hints { position:absolute; inset:0; z-index:95; pointer-events:none; }
-  .hint-hand { position:absolute; transform:translate(-50%,-50%); pointer-events:none;
-               filter:drop-shadow(0 2px 3px rgba(0,0,0,.55)); animation:hintTap 2s ease-in-out infinite; transition:opacity .6s; width:3.2%; }
-  .hint-hand img { width:100%; display:block; image-rendering:pixelated; }
-  @keyframes hintTap { 0%,100% { transform:translate(-50%,-50%) translateY(0) scale(1); }
-    10% { transform:translate(-50%,-50%) translateY(8px) scale(.9); }
-    24% { transform:translate(-50%,-50%) translateY(0) scale(1); } }
-  .hint-hand.dim { opacity:.18; animation:none; }
-  .fnote { position:absolute; z-index:96; width:2.1%; pointer-events:none; filter:drop-shadow(0 0 5px rgba(255,190,80,.55));
-           animation:floatUp 3.4s ease-out forwards; }
-  @keyframes floatUp { 0%{ transform:translate(0,0) rotate(-6deg); opacity:0 } 12%{ opacity:1 } 100%{ transform:translate(var(--dx,14px),-120px) rotate(10deg); opacity:0 } }
-  /* 猫：独立图层（身体 + 尾巴分开），尾巴每隔几秒自己摇一下 */
-  #cat { position:absolute; left:57.6%; top:82.4%; width:10.7%; aspect-ratio:1080/384; transform:translate(-50%,-100%);
-         z-index:82; pointer-events:none; }
-  #cat::before { content:""; position:absolute; left:5%; right:3%; bottom:-1.5%; height:11%; z-index:0;
-         background:radial-gradient(ellipse at center, rgba(0,0,0,.40), rgba(0,0,0,0) 70%); }
-  #catBody { position:absolute; left:0; top:0; width:82.22%; height:100%; z-index:2;
-         animation:catbreath 3.9s ease-in-out infinite alternate; transform-origin:50% 100%; }
-  #catTail { position:absolute; left:79.81%; top:0; width:20.19%; height:100%; z-index:1;
-         transform-origin:0% 70.6%; animation:tailwag 6.4s ease-in-out infinite; }
-  @keyframes tailwag { 0%,55% { transform:rotate(0deg) } 63% { transform:rotate(-4.2deg) } 71% { transform:rotate(2.2deg) }
-         79% { transform:rotate(-3deg) } 87%,100% { transform:rotate(0deg) } }
-  @keyframes catbreath { from { transform:scaleY(1) } to { transform:scaleY(1.014) } }
-  @media (prefers-reduced-motion: reduce) { #catTail, #catBody, .hint-hand { animation:none; } }
-  #dialog { margin:8px; background:#f7ecd2; border:3px solid #8a6b3f; border-radius:10px; color:#43331d;
-            padding:9px 16px; font-size:clamp(13px,2.2vw,16.5px); display:flex; align-items:center; gap:10px; min-height:50px; flex:none; }
-  #dialog .star { color:#d9a441; font-size:19px; flex:none; }
-  #panelWrap { position:absolute; inset:0; background:rgba(8,12,24,.58); display:none; align-items:center; justify-content:center; z-index:200; }
-  #panel { background:#fdf6e0; color:#43331d; border:3px solid #8a6b3f; border-radius:12px; width:min(540px,94%); max-height:92%;
-           overflow:auto; padding:18px 20px; box-shadow:0 14px 40px rgba(0,0,0,.5); }
-  #panel h2 { font-size:19px; margin-bottom:10px; color:#5f4625; }
-  #panel .body { font-size:14.5px; line-height:1.8; }
-  #panel .body a { color:#8a5a1d; font-weight:700; }
-  #panelClose { float:right; background:#8a6b3f; color:#fff; border:none; width:28px; height:28px; border-radius:50%; font-size:15px; cursor:pointer; }
-  #wxCanvas { width:100%; display:block; border-radius:8px; border:2.5px solid #5d4426; margin-bottom:10px; background:#16224d; }
-  .wx-big { font-size:30px; font-weight:800; color:#5f4625; }
-  .notes { display:grid; grid-template-columns:repeat(auto-fill,minmax(118px,1fr)); gap:10px; margin:12px 0; }
-  .note { padding:10px; border-radius:3px; font-size:12.5px; line-height:1.6; box-shadow:0 3px 6px rgba(0,0,0,.18); position:relative; min-height:84px; }
-  .note::before { content:""; position:absolute; top:-5px; left:50%; transform:translateX(-50%); width:11px; height:11px; border-radius:50%;
-                  background:radial-gradient(circle at 35% 30%, #ff9d9d, #d64545); box-shadow:0 1px 2px rgba(0,0,0,.4); }
-  .note b { display:block; margin-bottom:3px; font-size:12px; color:rgba(0,0,0,.55); }
-  .gb-form { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
-  .gb-form input, .gb-form textarea { border:2px solid #cbb27f; border-radius:8px; padding:8px 10px; font-size:14px; font-family:inherit; background:#fffdf4; }
-  .gb-form button { background:#8a6b3f; color:#fff8e7; border:none; border-radius:8px; padding:9px; font-size:15px; font-weight:700; cursor:pointer; }
-  .hint { color:#97835c; font-size:12px; margin-top:6px; }
+  html,body { margin:0; padding:0; height:100%; background:#070b16; overflow:hidden; -webkit-user-select:none; user-select:none; }
+  #stage { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+  #room { width:min(100vw,205.04vh); height:min(100vh,48.77vw); display:block; touch-action:manipulation; }
+  #room text { font-family:"PingFang SC","Microsoft YaHei",sans-serif; }
+  /* 唱片旋转 */
+  #vinyl { transform-box:fill-box; transform-origin:center; }
+  #vinyl.spin { animation:spin 1.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  /* 提示箭头浮动 */
+  .hint { animation:hintBob 1.8s ease-in-out infinite; }
+  @keyframes hintBob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
+  .hint.dim { opacity:.15; animation:none; }
+  /* 人物阴影 */
+  .shadow { fill:rgba(0,0,0,.28); }
+  /* 对话条 */
+  #dialog { position:fixed; left:50%; transform:translateX(-50%); bottom:max(10px, env(safe-area-inset-bottom)); width:min(94vw,900px); z-index:50;
+    background:#f7efdc; border:3px solid #7a5c3e; border-radius:12px; padding:10px 16px; font-size:16px; color:#4a3826;
+    box-shadow:0 4px 18px rgba(0,0,0,.45); cursor:pointer; }
+  #dialog .who { font-weight:700; color:#8a5a2b; margin-right:8px; }
+  /* 面板 */
+  #panel { position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; background:rgba(5,8,18,.72); }
+  #panel.open { display:flex; }
+  #panelCard { width:min(92vw,560px); max-height:86vh; overflow:auto; background:#f7efdc; border:3px solid #7a5c3e; border-radius:14px; padding:18px 20px; color:#4a3826; }
+  #panelCard h2 { margin:0 0 10px; font-size:20px; color:#8a5a2b; }
+  #panelClose { float:right; border:2px solid #7a5c3e; background:#fff; border-radius:8px; padding:4px 12px; cursor:pointer; font-size:15px; }
+  /* 音乐图标 */
+  #musicNote { animation:floatUp 2.6s ease-in-out infinite; }
+  @keyframes floatUp { 0%,100% { transform:translateY(0); opacity:.9; } 50% { transform:translateY(-14px); opacity:.5; } }
 </style>
 </head>
 <body>
 <div id="stage">
-  <div id="sceneWrap">
-  <div id="scene">
-    <img id="bg" src="assets/room-bg.webp?v=6" alt="Rae 的像素房间">
-    <img id="winDay" src="assets/win-day.png" alt="" style="left:36.88%; top:0.51%; width:34.37%; height:41.15%; display:none;">
-    <canvas id="winWx" style="position:absolute; left:36.88%; top:0.51%; width:34.37%; height:41.15%; z-index:2; pointer-events:none; image-rendering:pixelated;"></canvas>
-    <!-- 家具图层：每件一个 <img>，位置/尺寸对着原画量好；要换哪件，只换那张图和它的 style -->
-    <img class="furn" src="assets/furn-cal.png" alt="" style="left:72.15%; top:11.52%; width:6.72%; z-index:32;">
-    <div id="calDate"><div class="calM"></div><div class="calD"></div><div class="calW"></div></div>
-    <img class="furn" src="assets/furn-board.png?v=3" alt="" style="left:80.94%; top:16.87%; width:15.11%; z-index:53;">
-    <img class="furn" src="assets/furn-shelf.png" alt="" style="left:12.34%; top:10.91%; width:20.67%; z-index:58;">
-    <img class="furn" src="assets/furn-topplant.png" alt="" style="left:17.21%; top:10.80%; width:5.57%; z-index:59;">
-    <img class="furn" src="assets/furn-topbluebox.png" alt="" style="left:22.28%; top:9.05%; width:4.82%; z-index:59;">
-    <img class="furn" src="assets/furn-topwoodbox.png" alt="" style="left:26.29%; top:6.38%; width:4.52%; z-index:59;">
-    <img class="furn" src="assets/furn-sill.png" alt="" style="left:40.79%; top:23.15%; width:6.93%; z-index:68;">
-    <img id="sillDay" class="furn" src="assets/furn-sill-day.png" alt="" style="left:40.79%; top:23.15%; width:6.93%; z-index:69; opacity:0; transition:opacity 1.4s ease;">
-    <img class="furn" src="assets/furn-piano.png" alt="" style="left:2.91%; top:26.54%; width:18.76%; z-index:72;">
-    <div id="recordGroup" style="left:50.18%; top:43.21%; width:17.71%; height:23.87%;">
-      <img class="base" src="assets/furn-record.png" alt="">
-      <div id="discWrap"><img id="disc" src="assets/disc.png" alt=""><div id="discSheen"></div></div>
-      <img id="tonearm" src="assets/furn-tonearm.png" alt="">
-    </div>
-    <img class="furn" src="assets/furn-coffee.png" alt="" style="left:52.38%; top:35.19%; width:6.02%; z-index:68;">
-    <img class="furn" src="assets/furn-desk.png" alt="" style="left:64.98%; top:26.54%; width:23.94%; z-index:75;">
-    <img class="furn" src="assets/furn-chair.png" alt="" style="left:68.44%; top:50.00%; width:10.39%; z-index:80;">
-    <img class="furn" src="assets/furn-plant.png" alt="" style="left:87.96%; top:47.53%; width:7.88%; z-index:76;">
-    <div id="pianoGlow"></div>
-    <div id="keysOverlay"></div>
-    <div id="dayTint"></div>
-    <div id="boy" class="sprite"><div class="shadow"></div><div class="fig"><img class="idle" src="assets/boy-idle.png" alt=""><div class="walk" style="background-image:url(assets/boy-walk.png); aspect-ratio:243/460"></div></div></div>
-    <div id="girl" class="sprite"><div class="shadow"></div><div class="fig"><img class="idle" src="assets/girl-idle.png" alt=""><div class="walk" style="background-image:url(assets/girl-walk.png); aspect-ratio:279/460"></div></div></div>
-    <div id="cat"><img id="catTail" src="assets/cat-tail.png" alt=""><img id="catBody" src="assets/cat-body.png" alt=""></div>
-    <div id="hints"></div>
-    <div id="panelWrap"><div id="panel">
-      <button id="panelClose">✕</button>
-      <h2 id="panelTitle"></h2>
-      <div class="body" id="panelBody"></div>
-    </div></div>
-  </div>
-  </div>
-  <div id="dialog"><span class="star">★</span><span id="dialogText"></span></div>
-  <button id="fsBtn" title="全屏 / 横屏">⛶</button>
+<svg id="room" viewBox="0 0 1993 972" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <clipPath id="winClip"><rect x="750" y="15" width="655" height="380" rx="4"/></clipPath>
+  </defs>
+
+  <!-- ===== 底板（夜/日） ===== -->
+  <image id="plateNight" href="assets/plate-night.webp" x="0" y="0" width="1993" height="972"/>
+  <image id="plateDay" href="assets/plate-day.webp" x="0" y="0" width="1993" height="972" opacity="0"/>
+
+  <!-- ===== 天气（窗户里） ===== -->
+  <g id="wx" clip-path="url(#winClip)">
+    <rect id="wxSky" x="750" y="15" width="655" height="380" fill="#101a3d"/>
+    <g id="wxSunMoon"></g>
+    <g id="wxClouds"></g>
+    <g id="wxCity"></g>
+    <g id="wxPrecip"></g>
+    <polygon id="wxBolt" points="" fill="#fffbe0" opacity="0"/>
+    <rect id="wxFlash" x="750" y="15" width="655" height="380" fill="#ffffff" opacity="0"/>
+  </g>
+
+  <!-- ===== 钢琴键（12键） ===== -->
+  <g id="keys"></g>
+
+  <!-- ===== 唱片 ===== -->
+  <image id="vinyl" href="assets/disc.png" x="1191" y="429" width="116" height="77"/>
+
+  <!-- ===== 日历 ===== -->
+  <g id="cal">
+    <rect x="1445" y="120" width="120" height="180" rx="8" fill="#f7f1e3" stroke="#7a5c3e" stroke-width="5"/>
+    <rect x="1445" y="120" width="120" height="42" fill="#c0392b"/>
+    <circle cx="1475" cy="112" r="7" fill="#5a4a3a"/><circle cx="1535" cy="112" r="7" fill="#5a4a3a"/>
+    <text id="calM" x="1505" y="150" text-anchor="middle" font-size="26" font-weight="700" fill="#fff">10月</text>
+    <text id="calD" x="1505" y="225" text-anchor="middle" font-size="64" font-weight="800" fill="#333">21</text>
+    <text id="calW" x="1505" y="268" text-anchor="middle" font-size="24" fill="#666">星期三</text>
+  </g>
+
+  <!-- ===== 猫 ===== -->
+  <ellipse class="shadow" cx="1148" cy="800" rx="110" ry="18"/>
+  <image id="cat" href="assets/cat-body.png" x="1032" y="700" width="233" height="106"/>
+
+  <!-- ===== 人物 ===== -->
+  <ellipse id="girlShadow" class="shadow" cx="0" cy="0" rx="34" ry="10"/>
+  <image id="girl" href="assets/girl-idle.png" x="0" y="0" width="84" height="148"/>
+  <ellipse id="boyShadow" class="shadow" cx="0" cy="0" rx="38" ry="11"/>
+  <image id="boy" href="assets/boy-idle.png" x="0" y="0" width="94" height="164"/>
+
+  <!-- ===== 音乐图标 ===== -->
+  <text id="musicNote" x="0" y="0" font-size="44" text-anchor="middle" opacity="0">🎵</text>
+
+  <!-- ===== 提示箭头 ===== -->
+  <g id="hints"></g>
+
+  <!-- ===== 点击区 ===== -->
+  <g id="zones" fill="#fff" opacity="0">
+    <rect data-id="piano" x="58" y="258" width="374" height="442"/>
+    <rect data-id="shelf" x="246" y="106" width="412" height="454"/>
+    <rect data-id="window" x="735" y="5" width="685" height="400"/>
+    <rect data-id="record" x="1000" y="420" width="353" height="232"/>
+    <rect data-id="desk" x="1295" y="258" width="477" height="469"/>
+    <rect data-id="board" x="1613" y="164" width="301" height="356"/>
+  </g>
+</svg>
 </div>
-<audio id="bgm" loop preload="auto" src="assets/gymnopedie.mp3"></audio>
+
+<div id="dialog"><span class="who">Rae</span><span id="dialogText">点一点房间里的东西，小人会自己走过去。</span></div>
+<div id="panel"><div id="panelCard"><button id="panelClose">关闭</button><h2 id="panelTitle"></h2><div id="panelBody"></div></div></div>
+<audio id="bgm" src="assets/gymnopedie.mp3" loop preload="auto"></audio>
 
 <script>
-/* ================= 配置区：改文案、改提示位置只改这里 ================= */
-const CONFIG = {
-  idleDialog: "点一点房间里的东西，小人会自己走过去。",
-  objects: {
-    shelf:  { dialog:"书架上摆着我喜欢的书。—— 想了解我，先从这里开始。", title:"📚 关于我",
-              body:`<p>你好，我是 <b>Rae</b>。这里是我的像素小房间，也是我的个人主页。</p><p>（这一段是占位文案，等 Rae 本人发来正式介绍后替换。）</p>` },
-    record: { dialog:"唱片机和钢琴是连着的：钢琴一响，黑胶就跟着转。", title:"🎵 音乐",
-              body:`<p>在这间屋里流淌的，是 Erik Satie 的《Gymnopédie No.1》。</p><p>点一点钢琴，就能让它响起来（或停下来）。音乐响起时，唱片会转，琴键也会自己动。</p><p style="color:#97835c;font-size:12.5px">BGM - Erik Satie - Gymnopédies No.1（Musopen 公共版本）</p>` },
-    desk:   { dialog:"书桌上有我的电脑。—— 要找我，从这里。", title:"✉️ 联系我",
-              body:`<p>GitHub：<a href="https://github.com/raemyn24" target="_blank" rel="noopener">github.com/raemyn24</a></p>
-                    <p>我的日报《头版》：<a href="https://raemyn24.github.io/" target="_blank" rel="noopener">raemyn24.github.io</a></p>
-                    <p>（邮箱等联系方式等 Rae 确认后再放上来。）</p>` },
-    pianoOn:  "♪ 钢琴自己弹了起来——Satie《Gymnopédie No.1》。再点一次钢琴可以停下。",
-    pianoOff: "音乐停了，房间安静下来。",
-    board:  "软木板上钉满了大家的便签。—— 你也可以留一张。",
-  },
-  /* ☝️ 提示的位置（占场景的比例，想挪就改数字） */
-  HINTS: [ ['piano',.125,.395], ['shelf',.230,.300], ['window',.550,.165], ['record',.590,.450], ['desk',.790,.420], ['board',.885,.300] ],
-};
-/* ========================================================= */
-
-document.addEventListener('contextmenu', e=>{ if(!e.target.closest('input, textarea')) e.preventDefault(); });
-document.addEventListener('dragstart', e=>{ if(e.target.tagName === 'IMG') e.preventDefault(); });
-const $ = id=>document.getElementById(id);
-const scene = $('scene'), dialogText = $('dialogText');
-function fit(){ const st = $('stage'); const W = st.clientWidth, H = st.clientHeight;
-  const availH = H - $('dialog').offsetHeight - 26;
-  let w = W - 16, h = w * 972/1993;
-  if (h > availH) { h = availH; w = h * 1993/972; }
-  scene.style.width = w + 'px'; scene.style.height = h + 'px';
-  const cd = $('calDate');
-  cd.querySelector('.calM').style.fontSize = (w*.0115)+'px';
-  cd.querySelector('.calD').style.fontSize = (w*.030)+'px';
-  cd.querySelector('.calW').style.fontSize = (w*.0105)+'px';
-}
-addEventListener('resize', fit);
-if (screen.orientation) screen.orientation.addEventListener('change', ()=>setTimeout(fit, 80));
-addEventListener('load', ()=>{ fit(); setTimeout(fit, 300); });
-$('fsBtn').addEventListener('click', async ()=>{
-  try {
-    if (document.fullscreenElement) await document.exitFullscreen();
-    else { const el = document.documentElement;
-      if (el.requestFullscreen) await el.requestFullscreen({ navigationUI:'hide' }).catch(()=>el.requestFullscreen());
-      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-      try { await screen.orientation.lock('landscape'); } catch(e){}
-    }
-  } catch(e){}
-  setTimeout(fit, 350);
-});
-dialogText.textContent = CONFIG.idleDialog; fit();
-
-/* ---------- 杭州天气（Open-Meteo） ---------- */
-const WMO = {0:'晴',1:'晴间多云',2:'多云',3:'阴',45:'雾',48:'雾',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',80:'阵雨',81:'阵雨',82:'暴雨阵雨',85:'阵雪',86:'阵雪',95:'雷阵雨',96:'雷阵雨',99:'雷阵雨'};
+"use strict";
+const SVGNS = "http://www.w3.org/2000/svg";
+const $ = id => document.getElementById(id);
+const svg = $('room');
+let wxAnim = null; // 天气动画句柄（提前声明，避免TDZ）
 let weather = { temp:19, desc:'小雨', kind:'rain', hi:20, lo:14, hum:91, ok:false };
+function el(tag, attrs, parent){ const e = document.createElementNS(SVGNS, tag); for(const k in attrs) e.setAttribute(k, attrs[k]); if(parent) parent.appendChild(e); return e; }
+
+/* ---------- 基础 ---------- */
+const isDayNow = ()=>{ const h = new Date().getHours(); return h>=6 && h<18; };
+function say(who, text){ $('dialog').querySelector('.who').textContent = who; $('dialogText').textContent = text; }
+function openPanel(title, html){ $('panelTitle').textContent = title; $('panelBody').innerHTML = html; $('panel').classList.add('open'); stopWxPanel(); }
+$('panelClose').onclick = ()=>{ $('panel').classList.remove('open'); stopWxPanel(); };
+$('panel').addEventListener('click', e=>{ if(e.target.id==='panel') { $('panel').classList.remove('open'); stopWxPanel(); } });
+
+/* ---------- 日历真实日期 ---------- */
+(function(){
+  const d = new Date();
+  $('calM').textContent = (d.getMonth()+1)+'月';
+  $('calD').textContent = d.getDate();
+  $('calW').textContent = '星期'+'日一二三四五六'[d.getDay()];
+})();
+
+/* ---------- 昼夜切换 ---------- */
+function applyDayNight(){
+  const day = isDayNow();
+  $('plateDay').setAttribute('opacity', day ? 1 : 0);
+  $('plateNight').setAttribute('opacity', day ? 0 : 1);
+  buildKeys(day ? KEYS_DAY : KEYS_NIGHT);
+  placeVinyl(day ? VINYL_DAY : VINYL_NIGHT);
+  if(typeof drawWeather === 'function') drawWeather();
+}
+// 初始化在脚本末尾调用
+// 底板渐变
+$('plateDay').style.transition = 'opacity 1.4s ease';
+$('plateNight').style.transition = 'opacity 1.4s ease';
+
+/* ---------- BGM ---------- */
+const bgm = $('bgm');
+let playing = false, pianoTimer = null;
+function toggleMusic(){
+  playing = !playing;
+  if(playing){ bgm.play().catch(()=>{}); $('vinyl').classList.add('spin'); setMusicNote(boy.x, boy.y-190, true); startPianoAuto(); say('Rae','♪ 钢琴自己弹起来了'); }
+  else { bgm.pause(); $('vinyl').classList.remove('spin'); setMusicNote(0,0,false); stopPianoAuto(); say('Rae','音乐停了。'); }
+}
+function startPianoAuto(){
+  stopPianoAuto();
+  const chords = [[0,4,7],[2,5,9],[4,7,11],[5,9,0]];
+  let ci = 0;
+  pianoTimer = setInterval(()=>{
+    const ch = chords[ci++ % chords.length];
+    ch.forEach(k=>pressKey(k,true));
+    setTimeout(()=>ch.forEach(k=>pressKey(k,false)), 700);
+  }, 1100);
+}
+function stopPianoAuto(){ if(pianoTimer){ clearInterval(pianoTimer); pianoTimer=null; } KEYS.els.forEach((_,i)=>pressKey(i,false)); }
+
+/* ---------- 面板内容 ---------- */
+const PANELS = {
+  piano: ['🎹 钢琴', '<p>点一下钢琴，开始 / 停止播放萨蒂《Gymnopédie No.1》。</p><p>播放时琴键会自动按下，唱片也会转起来。</p><button onclick="toggleMusic()" style="padding:8px 20px;font-size:16px;">播放 / 停止</button>'],
+  shelf: ['📚 书架', '<p>这里放着 Rae 的书。</p><p><i>（等 Rae 发来书单，这里会换成真正的内容）</i></p>'],
+  window: ['🌦 窗外 · 杭州', ''],
+  desk: ['💻 书桌', '<p>Rae 的工作台。</p><p><i>（等 Rae 发来介绍和联系方式）</i></p>'],
+  board: ['📌 留言板', '<div id="gbList"></div><input id="gbName" placeholder="名字" style="width:30%"><input id="gbText" placeholder="留句话吧" style="width:60%"><button onclick="addNote()">贴上</button>'],
+  record: ['🎵 唱片机', '<p>黑胶唱机。点钢琴开始播放，唱片就会转。</p>'],
+};
+function updateWeatherPanel(){
+  const d = new Date(), wk = '日一二三四五六'[d.getDay()];
+  return `<p style="font-size:34px;margin:6px 0;">${weather.temp}°C <span style="font-size:18px;">杭州 · ${weather.desc}</span></p>
+    <p>今日 ${weather.lo}° ~ ${weather.hi}°C · 湿度 ${weather.hum}% · ${d.getMonth()+1}月${d.getDate()}日 星期${wk}${weather.ok?'':'（天气接口没连上，兜底数据）'}</p>
+    <p>窗外现在就是这个天气 ☁️</p>`;
+}
+// 留言板
+let notes = JSON.parse(localStorage.getItem('rae_notes')||'[{"n":"屋主 Rae","t":"欢迎来到我的小房间，留张便签再走吧 📌"}]');
+function renderNotes(){ const l=$('gbList'); if(!l) return; l.innerHTML = notes.map(n=>`<p><b>${n.n}:</b> ${n.t}</p>`).join(''); }
+function addNote(){ const n=$('gbName').value.trim()||'匿名', t=$('gbText').value.trim(); if(!t) return; notes.push({n,t}); localStorage.setItem('rae_notes',JSON.stringify(notes)); renderNotes(); $('gbText').value=''; }
+
+/* ---------- 点击触发 ---------- */
+const STAND = { piano:[300,640], shelf:[480,620], window:[965,560], record:[1176,640], desk:[1500,700], board:[1764,620] };
+document.querySelectorAll('#zones rect').forEach(z=>{
+  z.style.cursor='pointer'; z.style.pointerEvents='all';
+  z.addEventListener('click', ()=>{
+    const id = z.dataset.id;
+    const [tx,ty] = STAND[id];
+    walkTo(tx, ty, ()=>{
+      if(id==='piano') toggleMusic();
+      else {
+        let [t,h] = PANELS[id];
+        if(id==='window') h = updateWeatherPanel();
+        openPanel(t,h);
+        if(id==='board') renderNotes();
+        say('Rae', {shelf:'书架上都是宝贝。', window:'窗外是杭州今天的样子。', desk:'我的书桌，有点乱。', board:'看看大家都留了什么。', record:'黑胶的味道。'}[id]||'');
+      }
+    });
+  });
+});
+// 点空白处关闭面板
+$('dialog').onclick = ()=>{ $('panel').classList.remove('open'); };
+function stopWxPanel(){}
+
+const boy = { el:$('boy'), sh:$('boyShadow'), x:877, y:758, w:94, h:164 };
+const girl = { el:$('girl'), sh:$('girlShadow'), x:797, y:758, w:84, h:148 };
+function place(p){ p.el.setAttribute('x', p.x-p.w/2); p.el.setAttribute('y', p.y-p.h); p.sh.setAttribute('cx', p.x); p.sh.setAttribute('cy', p.y+6); }
+place(boy); place(girl);
+// 女孩跟着男孩
+let girlTarget = null;
+
+/* 简易寻路：直线 + 绕开猫 */
+const CAT = { x0:1032, x1:1265, y0:720, y1:806 };
+function planPath(x0,y0,x1,y1){
+  const pts = [[x0,y0]];
+  // 如果直线穿过猫，加绕行点
+  const inCat = (x,y)=> x>CAT.x0-30 && x<CAT.x1+30 && y>CAT.y0-20 && y<CAT.y1+20;
+  if(inCat((x0+x1)/2,(y0+y1)/2) || inCat(x1,y1)){
+    pts.push([(CAT.x0+CAT.x1)/2, CAT.y1+60]);
+  }
+  pts.push([x1,y1]);
+  return pts;
+}
+let walking = false;
+function walkTo(tx, ty, done){
+  if(walking) return; walking = true;
+  dimHints(true);
+  const path = planPath(boy.x, boy.y, tx, ty);
+  let si = 0;
+  const speed = 260; // px/s
+  let last = performance.now();
+  // 女孩跟随目标
+  girlTarget = { x: tx-80, y: ty };
+  function step(t){
+    const dt = Math.min(50, t-last)/1000; last = t;
+    const [px,py] = path[si];
+    const dx = px-boy.x, dy = py-boy.y, dist = Math.hypot(dx,dy);
+    if(dist < 8){
+      si++;
+      if(si >= path.length){
+        walking = false; dimHints(false);
+        // 女孩走过去
+        walkGirl();
+        if(done) done();
+        return;
+      }
+    } else {
+      boy.x += dx/dist*speed*dt; boy.y += dy/dist*speed*dt;
+      // 朝向（翻转）
+      boy.el.style.transform = dx<0 ? 'scaleX(-1)' : '';
+      boy.el.style.transformBox = 'fill-box'; boy.el.style.transformOrigin = 'center';
+      place(boy);
+    }
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function walkGirl(){
+  if(!girlTarget) return;
+  const tx = girlTarget.x, ty = girlTarget.y;
+  const dx = tx-girl.x, dy = ty-girl.y, dist = Math.hypot(dx,dy);
+  if(dist < 10) return;
+  const speed = 240;
+  let last = performance.now();
+  function step(t){
+    const dt = Math.min(50, t-last)/1000; last = t;
+    const dx2 = tx-girl.x, dy2 = ty-girl.y, d2 = Math.hypot(dx2,dy2);
+    if(d2 < 10){ place(girl); return; }
+    girl.x += dx2/d2*speed*dt; girl.y += dy2/d2*speed*dt;
+    girl.el.style.transform = dx2<0 ? 'scaleX(-1)' : '';
+    girl.el.style.transformBox = 'fill-box'; girl.el.style.transformOrigin = 'center';
+    place(girl);
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+const KEYS_NIGHT = { x0:171, y0:453, x1:396, y1:519 };
+const KEYS_DAY = { x0:175, y0:470, x1:375, y1:500 };
+const KEYS = { n:12, els:[], cur:null };
+function buildKeys(pos){
+  const g = $('keys'); g.innerHTML=''; KEYS.els=[];
+  const kw = (pos.x1-pos.x0)/KEYS.n;
+  for(let i=0;i<KEYS.n;i++){
+    const r = el('rect',{ x:pos.x0+i*kw+1, y:pos.y0, width:kw-2, height:pos.y1-pos.y0, fill:'#f2ede2', stroke:'#3a3128','stroke-width':1.5 },g);
+    KEYS.els.push(r);
+  }
+  KEYS.cur = pos;
+}
+function pressKey(i, down){
+  const r = KEYS.els[i]; if(!r || !KEYS.cur) return;
+  r.setAttribute('fill', down ? '#c9a86a' : '#f2ede2');
+  r.setAttribute('y', down ? KEYS.cur.y0+4 : KEYS.cur.y0);
+}
+/* ---------- 唱片（日夜双坐标） ---------- */
+const VINYL_NIGHT = { x:1191, y:429, w:116, h:77 };
+const VINYL_DAY = { x:1165, y:430, w:110, h:60 };
+function placeVinyl(pos){ const v=$('vinyl'); v.setAttribute('x',pos.x); v.setAttribute('y',pos.y); v.setAttribute('width',pos.w); v.setAttribute('height',pos.h); }
+
+/* ---------- 提示箭头（像素风） ---------- */
+const HINTS = [ ['piano',249,384], ['shelf',458,292], ['window',1096,160], ['record',1176,437], ['desk',1574,408], ['board',1764,292] ];
+(function(){
+  const g = $('hints');
+  HINTS.forEach(([id,x,y])=>{
+    const im = el('image',{ href:'assets/hint-arrow.png', x:x-36, y:y-20, width:72, height:39, class:'hint', 'data-id':id },g);
+    im.style.imageRendering = 'pixelated';
+  });
+})();
+function dimHints(dim){ document.querySelectorAll('#hints .hint').forEach(h=>h.classList.toggle('dim',dim)); }
+
+/* ---------- 音乐图标 ---------- */
+function setMusicNote(x,y,show){ const n=$('musicNote'); n.setAttribute('x',x); n.setAttribute('y',y); n.setAttribute('opacity',show?1:0); }
+
+const WMO = {0:'晴',1:'晴间多云',2:'多云',3:'阴',45:'雾',48:'雾',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',80:'阵雨',81:'阵雨',82:'暴雨阵雨',85:'阵雪',86:'阵雪',95:'雷阵雨',96:'雷阵雨',99:'雷阵雨'};
 function wmoKind(c){ if([95,96,99].includes(c)) return 'storm'; if([51,53,55,61,63,65,80,81,82].includes(c)) return 'rain'; if([71,73,75,77,85,86].includes(c)) return 'snow'; if(c===0) return 'clear'; if([1,2].includes(c)) return 'cloud'; return 'overcast'; }
 fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.1551&current=temperature_2m,relative_humidity_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FShanghai')
   .then(r=>r.json()).then(d=>{ const c = d.current.weather_code;
     weather = { temp:Math.round(d.current.temperature_2m), desc:WMO[c]||'多云', kind:wmoKind(c),
-                hi:Math.round(d.daily.temperature_2m_max[0]), lo:Math.round(d.daily.temperature_2m_min[0]),
-                hum:Math.round(d.current.relative_humidity_2m), ok:true }; }).catch(()=>{});
+      hi:Math.round(d.daily.temperature_2m_max[0]), lo:Math.round(d.daily.temperature_2m_min[0]),
+      hum:Math.round(d.current.relative_humidity_2m), ok:true };
+    drawWeather();
+  }).catch(()=>{});
 
-/* ---------- 窗户实时天气 Canvas（常驻） ---------- */
-(function(){
-  const cv = $('winWx'); if(!cv) return;
-  cv.width = 685; cv.height = 400;
-  const g = cv.getContext('2d');
-  const stars = Array.from({length:60},()=>({x:Math.random()*685,y:Math.random()*200,s:Math.random()<.3?2.5:1.4,tw:Math.random()*6.28}));
-  const rain = Array.from({length:130},()=>({x:Math.random()*700,y:Math.random()*400,v:6+Math.random()*5}));
-  const snow = Array.from({length:80},()=>({x:Math.random()*685,y:Math.random()*400,v:.7+Math.random(),ph:Math.random()*6.28}));
-  const clouds = Array.from({length:6},(_,i)=>({x:i*130+Math.random()*50,y:30+Math.random()*60,w:100+Math.random()*80,v:.15+Math.random()*.2}));
-  let flash = 0, flashT = 0;
-  const city = [[10,230,70,170],[95,260,55,140],[160,215,80,185],[255,250,60,150],[325,225,75,175],[415,265,55,135],[480,235,78,165],[570,260,60,140],[645,240,40,160]];
+/* ---------- SVG 天气（窗户里，750,15,655x380） ---------- */
+const WX = { x:750, y:15, w:655, h:380 };
+function drawWeather(){
+  if(wxAnim) cancelAnimationFrame(wxAnim);
+  const day = isDayNow(), kind = weather.kind;
+  const gSun = $('wxSunMoon'), gCl = $('wxClouds'), gCity = $('wxCity'), gPr = $('wxPrecip');
+  [gSun,gCl,gCity,gPr].forEach(g=>g.innerHTML='');
+  $('wxBolt').setAttribute('points',''); $('wxBolt').setAttribute('opacity',0);
+  // 天空
+  const sky = $('wxSky');
+  if(kind==='overcast'||kind==='rain'||kind==='storm') sky.setAttribute('fill', day?'#7a8ba3':'#1a2340');
+  else sky.setAttribute('fill', day?'#5f9de0':'#101a3d');
+  // 太阳/月亮/星星
+  if(kind==='clear'||kind==='cloud'){
+    if(day){ el('circle',{cx:1240,cy:80,r:34,fill:'#ffd94d'},gSun); el('circle',{cx:1240,cy:80,r:46,fill:'#ffd94d','fill-opacity':.3},gSun); }
+    else {
+      for(let i=0;i<50;i++) el('rect',{x:WX.x+Math.random()*WX.w, y:WX.y+Math.random()*180, width:2.5, height:2.5, fill:'#ffeec2'},gSun);
+      el('circle',{cx:1240,cy:80,r:26,fill:'#f5d76e'},gSun); el('circle',{cx:1230,cy:72,r:22,fill: day?'#5f9de0':'#101a3d'},gSun);
+    }
+  }
+  // 云
+  const nCl = kind==='clear'?3 : kind==='cloud'?5 : 7;
+  const clouds = [];
+  for(let i=0;i<nCl;i++){
+    const c = el('g',{},gCl);
+    const cx = WX.x + i*(WX.w/nCl) + Math.random()*40, cy = WX.y+40+Math.random()*60, w = 90+Math.random()*70;
+    el('ellipse',{cx, cy, rx:w/2, ry:16, fill: day?(kind==='clear'?'#ffffff':'#eef2f8'):'#4a5a85','fill-opacity':.92},c);
+    el('ellipse',{cx:cx+24, cy:cy-10, rx:w/3, ry:13, fill: day?(kind==='clear'?'#ffffff':'#eef2f8'):'#4a5a85','fill-opacity':.92},c);
+    clouds.push({e:c, x:cx, ox:cx, v:.2+Math.random()*.3});
+  }
+  // 城市剪影
+  const cityB = [[760,245,70,150],[845,275,55,120],[915,230,80,165],[1010,265,60,130],[1080,240,75,155],[1170,280,55,115],[1235,250,78,145],[1325,275,60,120]];
+  cityB.forEach(b=> el('rect',{x:b[0],y:b[1],width:b[2],height:b[3],fill: day?'#5d7ba6':'#0c1330'},gCity));
+  if(!day) for(let i=0;i<70;i++) el('rect',{x:766+((i*53)%620), y:260+((i*29)%110), width:4, height:4, fill:'#ffca7a'},gCity);
+  el('rect',{x:WX.x, y:WX.y+WX.h-24, width:WX.w, height:24, fill: day?'#7d94b5':'#090f24'},gCity);
+  // 降水粒子
+  const parts = [];
+  if(kind==='rain'||kind==='storm') for(let i=0;i<110;i++) parts.push({t:'r', x:WX.x+Math.random()*WX.w, y:WX.y+Math.random()*WX.h, v:7+Math.random()*5});
+  if(kind==='snow') for(let i=0;i<70;i++) parts.push({t:'s', x:WX.x+Math.random()*WX.w, y:WX.y+Math.random()*WX.h, v:.8+Math.random(), ph:Math.random()*6.28});
+  let flashT = 0, flash = 0;
   function frame(t){
-    const day = isDayNow(), kind = weather.kind;
-    // 天空
-    const sky = g.createLinearGradient(0,0,0,400);
-    if(kind==='overcast'||kind==='rain'||kind==='storm'){
-      if(day){ sky.addColorStop(0,'#7a8ba3'); sky.addColorStop(1,'#aeb9c7'); }
-      else { sky.addColorStop(0,'#1a2340'); sky.addColorStop(1,'#2e3a5c'); }
-    } else {
-      if(day){ sky.addColorStop(0,'#5f9de0'); sky.addColorStop(1,'#cfe8fb'); }
-      else { sky.addColorStop(0,'#101a3d'); sky.addColorStop(1,'#33436e'); }
-    }
-    g.fillStyle = sky; g.fillRect(0,0,685,400);
-    // 星星/月亮（夜晴）
-    if(!day && (kind==='clear'||kind==='cloud')){
-      stars.forEach(s=>{ if(Math.sin(t/700+s.tw)>-0.3){ g.fillStyle='#ffeec2'; g.fillRect(s.x,s.y,s.s,s.s); } });
-      g.fillStyle='#f5d76e'; g.beginPath(); g.arc(590,60,20,0,7); g.fill();
-      g.fillStyle = day ? '#5f9de0' : '#101a3d'; g.beginPath(); g.arc(582,54,17,0,7); g.fill();
-    }
-    // 太阳（昼晴）
-    if(day && kind==='clear'){
-      g.fillStyle='#ffd94d'; g.beginPath(); g.arc(590,60,24,0,7); g.fill();
-      g.fillStyle='rgba(255,217,77,.35)'; g.beginPath(); g.arc(590,60,34,0,7); g.fill();
-    }
-    // 云
-    const cloudCol = day ? (kind==='clear'?'rgba(255,255,255,.92)':'rgba(240,244,250,.95)') : 'rgba(80,100,150,.8)';
-    const nCloud = kind==='clear'?3 : kind==='cloud'?5 : 7;
-    g.fillStyle = cloudCol;
-    clouds.slice(0,nCloud).forEach(c=>{
-      c.x += c.v * (kind==='clear'?1:1.6); if(c.x-c.w>685) c.x = -c.w;
-      g.beginPath(); g.ellipse(c.x,c.y,c.w/2,15,0,0,7); g.ellipse(c.x+25,c.y-9,c.w/3,12,0,0,7); g.fill();
+    clouds.forEach(c=>{ c.x += c.v; if(c.x - 80 > WX.x+WX.w) c.x = WX.x - 80; c.e.setAttribute('transform', `translate(${c.x-c.ox},0)`); });
+    gPr.innerHTML='';
+    parts.forEach(p=>{
+      if(p.t==='r'){ p.y+=p.v*2.4; p.x-=p.v*.7; if(p.y>WX.y+WX.h){p.y=WX.y;p.x=WX.x+Math.random()*WX.w;}
+        el('line',{x1:p.x,y1:p.y,x2:p.x-4,y2:p.y+16,stroke:'rgba(190,215,250,.7)','stroke-width':2},gPr); }
+      else { p.y+=p.v; p.x+=Math.sin(t/600+p.ph)*.6; if(p.y>WX.y+WX.h){p.y=WX.y;p.x=WX.x+Math.random()*WX.w;}
+        el('circle',{cx:p.x,cy:p.y,r:2.6,fill:'rgba(255,255,255,.92)'},gPr); }
     });
-    // 城市剪影
-    g.fillStyle = day ? '#5d7ba6' : '#0c1330';
-    city.forEach(b=> g.fillRect(b[0],b[1],b[2],b[3]));
-    if(!day){ g.fillStyle='#ffca7a'; for(let i=0;i<80;i++){ g.fillRect(16+((i*53)%650), 245+((i*29)%120), 3.5, 3.5); } }
-    g.fillStyle = day ? '#7d94b5' : '#090f24'; g.fillRect(0,376,685,24);
-    // 雨
-    if(kind==='rain'||kind==='storm'){
-      g.strokeStyle='rgba(190,215,250,.7)'; g.lineWidth=2; g.beginPath();
-      rain.forEach(p=>{ p.y+=p.v*2.6; p.x-=p.v*.8; if(p.y>400){p.y=-10;p.x=Math.random()*720;} if(p.x<-12)p.x=690;
-        g.moveTo(p.x,p.y); g.lineTo(p.x-4,p.y+16); }); g.stroke();
-    }
-    // 雪
-    if(kind==='snow'){
-      g.fillStyle='rgba(255,255,255,.92)';
-      snow.forEach(p=>{ p.y+=p.v; p.x+=Math.sin(t/600+p.ph)*.6; if(p.y>400){p.y=-5;p.x=Math.random()*685;}
-        g.beginPath(); g.arc(p.x,p.y,2.4,0,7); g.fill(); });
-    }
-    // 闪电
     if(kind==='storm'){
       flashT--;
-      if(flashT<=0){ flash = 8+Math.random()*10; flashT = 120+Math.random()*280; }
-      if(flash>0){
-        flash--;
-        g.fillStyle = `rgba(255,255,255,${0.55*(flash/18)})`; g.fillRect(0,0,685,400);
-        if(flash>12){
-          const lx = 200+Math.random()*280;
-          g.strokeStyle='#fffbe0'; g.lineWidth=5; g.beginPath();
-          g.moveTo(lx,0); g.lineTo(lx-30,90); g.lineTo(lx+10,90); g.lineTo(lx-40,200); g.lineTo(lx-5,200); g.lineTo(lx-45,330);
-          g.stroke();
-        }
-      }
+      if(flashT<=0){ flash=14; flashT=140+Math.random()*300; }
+      if(flash>0){ flash--;
+        $('wxFlash').setAttribute('opacity', .5*(flash/14));
+        if(flash>8){ const lx=900+Math.random()*300;
+          $('wxBolt').setAttribute('points', `${lx},15 ${lx-32},105 ${lx+8},105 ${lx-42},215 ${lx-6},215 ${lx-48},345`);
+          $('wxBolt').setAttribute('opacity',.95);
+        } else $('wxBolt').setAttribute('opacity',0);
+      } else { $('wxFlash').setAttribute('opacity',0); $('wxBolt').setAttribute('opacity',0); }
     }
-    requestAnimationFrame(frame);
+    wxAnim = requestAnimationFrame(frame);
   }
-  requestAnimationFrame(frame);
-})();
-/* ---------- 诊断层（临时） ---------- */
-(function(){
-  const d = document.createElement('div');
-  d.id = 'diag'; d.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999;background:rgba(0,0,0,.8);color:#0f0;font:12px monospace;padding:8px;white-space:pre;';
-  document.body.appendChild(d);
-  window.__diagUpd = function(){
-    const sc = $('scene'), wx = $('winWx'), bg = $('bg');
-    const sbr = sc.getBoundingClientRect(), wbr = wx.getBoundingClientRect();
-    d.textContent = 'hour='+new Date().getHours()+' isDay='+isDayNow()+' sceneClass='+sc.className+
-      '\nscene='+Math.round(sbr.width)+'x'+Math.round(sbr.height)+
-      ' winWx='+Math.round(wbr.width)+'x'+Math.round(wbr.height)+
-      '\nbg='+Math.round(bg.getBoundingClientRect().width)+'x'+Math.round(bg.getBoundingClientRect().height)+
-      ' dpr='+window.devicePixelRatio+' vw='+window.innerWidth;
-  };
-  setInterval(window.__diagUpd, 1000);
-})();
-const isDayNow = ()=>{ const h = new Date().getHours(); return h>=6 && h<18; };
-function applyDayNight(){
-  const day = isDayNow();
-  $('scene').classList.toggle('day', day);
-  $('dayTint').style.opacity = day ? 1 : 0;
-  $('sillDay').style.opacity = day ? 1 : 0;
-  const d = new Date(), cd = $('calDate');
-  cd.querySelector('.calM').textContent = (d.getMonth()+1) + '月';
-  cd.querySelector('.calD').textContent = d.getDate();
-  cd.querySelector('.calW').textContent = '星期' + '日一二三四五六'[d.getDay()];
+  wxAnim = requestAnimationFrame(frame);
 }
+
+/* ---------- 初始化 ---------- */
+place(boy); place(girl);
 applyDayNight(); setInterval(applyDayNight, 60000);
 
-/* ---------- 场景坐标（占场景宽/高的比例；v3 按原画重新量准） ---------- */
-const STAND = { piano:{x:.150,y:.748}, shelf:{x:.270,y:.620}, window:{x:.485,y:.600}, record:{x:.590,y:.700},
-                desk:{x:.815,y:.795}, board:{x:.872,y:.818} };
-const ZONES = [
-  { id:'piano', x:.123, y:.492, rx:.108, ry:.240 }, { id:'shelf', x:.227, y:.342, rx:.112, ry:.240 },
-  { id:'window', x:.540, y:.215, rx:.158, ry:.200 }, { id:'window', x:.755, y:.215, rx:.037, ry:.100 },
-  { id:'record', x:.590, y:.551, rx:.095, ry:.128 }, { id:'board', x:.885, y:.352, rx:.082, ry:.183 },
-  { id:'desk', x:.680, y:.325, rx:.052, ry:.082 }, { id:'desk', x:.782, y:.578, rx:.118, ry:.168 },
-];
-CONFIG.HINTS.forEach(([id,x,y])=>{ const d=document.createElement('div'); d.className='hint-hand'; d.dataset.id=id;
-  d.innerHTML='<img src="assets/hint-arrow.png" alt="">'; d.style.left=(x*100)+'%'; d.style.top=(y*100)+'%';
-  $('hints').appendChild(d); });
-const WALK = { x0:.075, x1:.935, y0:.555, y1:.905 };
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-
-/* ---------- 角色与移动（帧动画 + 避障寻路） ---------- */
-const OBSTACLES = [ // v3 按程序定位的真实落地边
-  {x0:.123,y0:.205,x1:.330,y1:.576},  // 书架
-  {x0:.029,y0:.395,x1:.217,y1:.705},  // 钢琴主体
-  {x0:.110,y0:.535,x1:.195,y1:.705},  // 琴凳
-  {x0:.502,y0:.425,x1:.679,y1:.671},  // 唱片柜
-  {x0:.650,y0:.415,x1:.889,y1:.745},  // 书桌
-  {x0:.685,y0:.545,x1:.788,y1:.805},  // 椅子
-  {x0:.880,y0:.505,x1:.958,y1:.762},  // 落地绿植
-  {x0:.518,y0:.742,x1:.634,y1:.830},  // 蓝猫（独立图层，别踩它）
-];
-const NODES = [[.190,.758],[.255,.668],[.368,.635],[.455,.622],[.560,.718],[.700,.835],[.200,.800],
-               [.400,.805],[.600,.848],[.780,.848],[.908,.848],[.475,.718],[.648,.758],[.615,.720],
-               [.655,.855],[.860,.860],[.838,.848],[.560,.870],[.700,.860]];
-const INFL = .010;
-function segHitsRect(x1,y1,x2,y2,r){
-  const dx=x2-x1, dy=y2-y1; let t0=0, t1=1;
-  const p=[-dx,dx,-dy,dy], q=[x1-(r.x0-INFL),(r.x1+INFL)-x1,y1-(r.y0-INFL),(r.y1+INFL)-y1];
-  for(let i=0;i<4;i++){ if(Math.abs(p[i])<1e-9){ if(q[i]<0) return false; }
-    else { const t=q[i]/p[i]; if(p[i]<0){ if(t>t1) return false; if(t>t0) t0=t; } else { if(t<t0) return false; if(t<t1) t1=t; } } }
-  return t0<=t1 && t1>0.001 && t0<0.999;
-}
-const segClear = (a,b)=> !OBSTACLES.some(r=> segHitsRect(a[0],a[1],b[0],b[1],r));
-const inObstacle = (x,y,pad=0)=> OBSTACLES.some(r=> x>r.x0-pad && x<r.x1+pad && y>r.y0-pad && y<r.y1+pad);
-function pushOut(x,y){
-  if(!inObstacle(x,y,.004)) return [x,y];
-  for(const r of [.025,.05,.08,.11,.15]){
-    for(let k=0;k<8;k++){ const a = k*Math.PI/4, px = x+Math.cos(a)*r, py = y+Math.sin(a)*r;
-      if(!inObstacle(px,py,.004)) return [px,py]; } }
-  return [x,y];
-}
-function planPath(sx,sy,gx,gy){
-  [gx,gy] = pushOut(gx,gy);
-  const _sx = sx, _sy = sy;
-  [sx,sy] = pushOut(sx,sy);
-  const startPushed = (sx !== _sx || sy !== _sy);
-  if(segClear([sx,sy],[gx,gy])) return (startPushed && Math.hypot(gx-sx,gy-sy) > .001) ? [[sx,sy],[gx,gy]] : [[gx,gy]];
-  const pts = [[sx,sy], ...NODES, [gx,gy]], n = pts.length, gi = n-1;
-  const dist = new Array(n).fill(Infinity), prev = new Array(n).fill(-1), done = new Array(n).fill(false);
-  dist[0]=0;
-  for(let k=0;k<n;k++){ let u=-1, best=Infinity;
-    for(let i=0;i<n;i++) if(!done[i] && dist[i]<best){ best=dist[i]; u=i; }
-    if(u<0) break; done[u]=true; if(u===gi) break;
-    for(let v=0;v<n;v++){ if(done[v]||v===u) continue;
-      if(segClear(pts[u],pts[v])){ const w=Math.hypot(pts[u][0]-pts[v][0],pts[u][1]-pts[v][1]);
-        if(dist[u]+w<dist[v]){ dist[v]=dist[u]+w; prev[v]=u; } } }
-  }
-  if(!done[gi] && dist[gi]===Infinity) return [];
-  const path=[]; let cur=gi; while(cur>0){ path.unshift(pts[cur]); cur=prev[cur]; if(cur<0) break; }
-  if(startPushed && path.length) path.unshift([sx,sy]);
-  return path;
-}
-function makeChar(el, wPct, x, y){
-  return { el, fig: el.querySelector('.fig'), idleEl: el.querySelector('.idle'), walkEl: el.querySelector('.walk'),
-           wPct, x, y, path:[], moving:false, face:1, action:null, frameT:Math.random()*4, speedF:0 };
-}
-const boy  = makeChar($('boy'),  5.60, .435, .718);
-const girl = makeChar($('girl'), 4.95, .492, .714);
-function placeChar(c){ const depth = .88 + (c.y-.555)*.55;
-  c.el.style.left = (c.x*100)+'%'; c.el.style.top = (c.y*100)+'%';
-  c.el.style.width = (c.wPct*depth)+'%'; c.el.style.zIndex = Math.round(c.y*100);
-  c.fig.style.transform = `scaleX(${c.face})`;
-  const lamp = Math.max(0, 1 - Math.hypot(c.x-.80, (c.y-.62)*1.6)/.50);
-  const fstr = `brightness(${(.90+.14*lamp).toFixed(3)}) sepia(${(.08+.16*lamp).toFixed(3)}) saturate(${(.95+.04*lamp).toFixed(3)})`;
-  if(c._f !== fstr){ c.fig.style.filter = fstr; c._f = fstr; }
-  if(c.moving){ c.idleEl.style.display='none'; c.walkEl.style.display='block';
-    c.walkEl.style.backgroundPosition = `${Math.floor(c.frameT)%4 * (100/3)}% 0`; }
-  else { c.idleEl.style.display='block'; c.walkEl.style.display='none'; }
-}
-function followPath(c, dt, baseSpeed){
-  if(!c.path.length){ c.moving=false; c.speedF=0; return true; }
-  const [tx,ty] = c.path[0];
-  const dx = tx-c.x, dy = ty-c.y, dist = Math.hypot(dx,dy);
-  const isFinal = c.path.length===1;
-  let target = 1;
-  if(isFinal && dist < .075) target = Math.max(.3, dist/.075);
-  c.speedF += (target - c.speedF) * Math.min(1, dt*7);
-  const step = baseSpeed * c.speedF * dt;
-  if(dist <= Math.max(step, .0035)){ c.x = tx; c.y = ty; c.path.shift();
-    if(!c.path.length){ c.moving=false; c.speedF=0; return true; } return false; }
-  c.x += dx/dist*step; c.y += dy/dist*step;
-  if(Math.abs(dx) > .002) c.face = dx>0 ? 1 : -1;
-  c.moving = true; c.frameT += dt * 9 * c.speedF;
-  return false;
-}
-let girlPlanT = 0;
-let lastT = performance.now();
-function loop(now){ const dt = Math.min(.05,(now-lastT)/1000); lastT = now;
-  const arrived = followPath(boy, dt, .30);
-  if(arrived && boy.action){ const a = boy.action; boy.action = null; setTimeout(()=>doAction(a), 160); }
-  girlPlanT -= dt;
-  const homeCands = [[boy.x-.054*boy.face, boy.y+.014],[boy.x+.054*boy.face, boy.y+.014],
-                     [boy.x-.054*boy.face, boy.y+.062],[boy.x+.054*boy.face, boy.y+.062],[boy.x, boy.y+.07]];
-  const home = homeCands.find(p=>!inObstacle(p[0],p[1],.01)) || homeCands[0];
-  const homeX = home[0], homeY = home[1];
-  const gd = Math.hypot(homeX-girl.x, homeY-girl.y);
-  if(girlPlanT <= 0){ girlPlanT = .35;
-    if(gd > .085 || (boy.moving && gd > .045)) girl.path = planPath(girl.x, girl.y, homeX, homeY); }
-  if(gd > .018 || girl.path.length) followPath(girl, dt, .335);
-  else girl.moving = false;
-  placeChar(boy); placeChar(girl);
-  requestAnimationFrame(loop);
-}
-requestAnimationFrame(loop);
-
-/* ---------- 点按（所有交互都等小人走到才触发） ---------- */
-let panelOpen = false;
-scene.addEventListener('click', e=>{
-  if(e.target.closest('#panelWrap') || panelOpen) return;
-  const r = scene.getBoundingClientRect();
-  const vx = (e.clientX-r.left)/r.width, vy = (e.clientY-r.top)/r.height;
-  const rotated = matchMedia('(orientation: portrait)').matches;
-  const px = rotated ? vy : vx, py = rotated ? 1 - vx : vy;
-  let hit = null;
-  for(const z of ZONES){ if(((px-z.x)/z.rx)**2 + ((py-z.y)/z.ry)**2 <= 1){ hit = z.id; break; } }
-  document.querySelectorAll('.hint-hand').forEach(d=>d.classList.add('dim'));
-  if(hit){ const s = STAND[hit]; boy.path = planPath(boy.x, boy.y, s.x, s.y); boy.action = hit; }
-  else { boy.path = planPath(boy.x, boy.y, clamp(px, WALK.x0, WALK.x1), clamp(py, WALK.y0, WALK.y1)); boy.action = null; }
-});
-
-/* ---------- 动作与面板 ---------- */
-let musicOn = false, noteTimer = null, keysTimer = null;
-const bgm = $('bgm');
-function doAction(id){
-  if(id==='piano'){ toggleMusic(); return; }
-  if(id==='window'){ openWindowPanel(); return; }
-  if(id==='board'){ say(CONFIG.objects.board); openPanel('📌 留言板', guestbookHTML()); return; }
-  const obj = CONFIG.objects[id]; if(!obj) return;
-  say(obj.dialog); openPanel(obj.title, obj.body);
-}
-function say(t){ dialogText.textContent = t; }
-function toggleMusic(){
-  if(musicOn){ bgm.pause(); musicOn=false; $('pianoGlow').classList.remove('on'); $('discSheen').classList.remove('on');
-    clearInterval(noteTimer); stopKeys(); say(CONFIG.objects.pianoOff); }
-  else { say(CONFIG.objects.pianoOn);
-    bgm.play().then(()=>{ musicOn=true; $('pianoGlow').classList.add('on'); $('discSheen').classList.add('on');
-      spawnNote(); noteTimer = setInterval(spawnNote, 800); startKeys(); })
-    .catch(()=> say('咦，音乐没能播放（浏览器拦了一下），再点一次钢琴试试？')); }
-}
-/* 像素音符（图片，不再是字体符号） */
-function spawnNote(){ const n = document.createElement('img'); n.className='fnote';
-  n.src = Math.random()<.5 ? 'assets/note1.png' : 'assets/note2.png';
-  n.style.left = (10.5+Math.random()*7)+'%'; n.style.top = '34%'; n.style.setProperty('--dx', (Math.random()*36-10)+'px');
-  scene.appendChild(n); setTimeout(()=>n.remove(), 3500); }
-/* 琴键跟弹：慢板节奏，随机和弦式按下几个键 */
-const KEYN = 12, keySegs = [];
-for(let i=0;i<KEYN;i++){ const s = document.createElement('div'); s.className='kseg'; $('keysOverlay').appendChild(s); keySegs.push(s); }
-function pressKeys(){
-  const base = 2 + Math.floor(Math.random()*7);
-  const picks = [base, base+2, base+4].filter(i=>i<KEYN && Math.random()<.8);
-  picks.forEach(i=>keySegs[i].classList.add('pressed'));
-  setTimeout(()=>picks.forEach(i=>keySegs[i].classList.remove('pressed')), 420 + Math.random()*380);
-}
-function startKeys(){ pressKeys(); keysTimer = setInterval(pressKeys, 950 + Math.random()*500); }
-function stopKeys(){ clearInterval(keysTimer); keySegs.forEach(s=>s.classList.remove('pressed')); }
-/* 黑胶：真实转速的加速/减速（33⅓ 转 ≈ 3.49 rad/s） */
-let discVel = 0, discAng = 0, discLast = performance.now();
-function discLoop(now){ const dt = Math.min(.05,(now-discLast)/1000); discLast = now;
-  const target = musicOn ? 3.491 : 0;
-  discVel += (target - discVel) * Math.min(1, dt * (musicOn ? .9 : .55));
-  if(Math.abs(discVel) > .001 || musicOn){ discAng = (discAng + discVel*dt) % (Math.PI*2);
-    $('disc').style.transform = `rotate(${discAng}rad)`; }
-  requestAnimationFrame(discLoop); }
-requestAnimationFrame(discLoop);
-function openPanel(title, html){ $('panelTitle').textContent = title; $('panelBody').innerHTML = html;
-  $('panelWrap').style.display='flex'; panelOpen = true; }
-function closePanel(){ $('panelWrap').style.display='none'; panelOpen = false; stopWx(); }
-$('panelClose').addEventListener('click', closePanel);
-$('panelWrap').addEventListener('click', e=>{ if(e.target.id==='panelWrap') closePanel(); });
-
-/* ---------- 窗户页：按当日天气动的窗景 ---------- */
-let wxRAF = null;
-function openWindowPanel(){
-  say('窗外是杭州今天的天气。');
-  const d = new Date(), wk = '日一二三四五六'[d.getDay()];
-  openPanel('🌦 今日 · 杭州', `<canvas id="wxCanvas" width="640" height="360"></canvas>
-    <p><span class="wx-big">${weather.temp}°C</span> &nbsp;杭州 · ${weather.desc}</p>
-    <p>今日 ${weather.lo}° ~ ${weather.hi}°C · 湿度 ${weather.hum}% · ${d.getMonth()+1}月${d.getDate()}日 星期${wk}${weather.ok?'':'（天气接口暂时没连上，这是兜底数据）'}</p>
-    <p>🗞 今天的《头版》：<a href="https://raemyn24.github.io/" target="_blank" rel="noopener">raemyn24.github.io</a></p>`);
-  startWx();
-}
-function startWx(){
-  const cv = $('wxCanvas'); if(!cv) return; const g = cv.getContext('2d');
-  const day = isDayNow(), kind = weather.kind;
-  const stars = Array.from({length:50},()=>({x:Math.random()*640,y:Math.random()*170,s:Math.random()<.25?2.4:1.3,tw:Math.random()*6.28}));
-  const parts = Array.from({length:kind==='rain'?110:kind==='snow'?70:0},()=>({x:Math.random()*660,y:Math.random()*360,v: kind==='rain'? 5+Math.random()*4 : .6+Math.random()*.9, ph:Math.random()*6.28}));
-  const clouds = Array.from({length:5},(_,i)=>({x:i*150+Math.random()*60, y:26+Math.random()*44, w:90+Math.random()*70, v:.12+Math.random()*.15}));
-  function frame(t){
-    const sky = g.createLinearGradient(0,0,0,360);
-    if(day){ sky.addColorStop(0,'#6fa8e0'); sky.addColorStop(1,'#cfe6fb'); } else { sky.addColorStop(0,'#131f47'); sky.addColorStop(1,'#3a4a75'); }
-    g.fillStyle = sky; g.fillRect(0,0,640,360);
-    if(!day){ g.fillStyle='#ffeec2'; stars.forEach(s=>{ if(Math.sin(t/700+s.tw)>-0.25) g.fillRect(s.x,s.y,s.s,s.s); });
-      g.fillStyle='#f5d76e'; g.beginPath(); g.arc(548,52,17,0,7); g.fill(); g.fillStyle='#1d2a55'; g.beginPath(); g.arc(540,47,15,0,7); g.fill(); }
-    if(day && kind!=='overcast'){ g.fillStyle='#ffd94d'; g.beginPath(); g.arc(548,52,20,0,7); g.fill(); }
-    g.fillStyle = day ? 'rgba(255,255,255,.92)' : 'rgba(70,90,140,.75)';
-    clouds.forEach(c=>{ c.x += c.v; if(c.x-c.w>640) c.x = -c.w;
-      g.beginPath(); g.ellipse(c.x, c.y, c.w/2, 13, 0, 0, 7); g.ellipse(c.x+22, c.y-8, c.w/3, 11, 0, 0, 7); g.fill(); });
-    const city = [[8,208,66,152],[86,238,52,122],[150,196,74,164],[236,228,58,132],[306,206,68,154],[386,242,54,118],[452,214,72,146],[536,236,58,124],[604,218,44,142]];
-    g.fillStyle = day ? '#5d7ba6' : '#0d1430';
-    city.forEach(b=> g.fillRect(b[0],b[1],b[2],b[3]));
-    if(!day){ g.fillStyle='#ffca7a'; for(let i=0;i<70;i++){ const bx=14+((i*53)%612), by=232+((i*29)%104); g.fillRect(bx,by,3.4,3.4); } }
-    g.fillStyle = day ? '#7d94b5' : '#0a1026'; g.fillRect(0,336,640,24);
-    if(kind==='rain'){ g.strokeStyle='rgba(195,220,255,.65)'; g.lineWidth=1.6; g.beginPath();
-      parts.forEach(p=>{ p.y+=p.v*2.4; p.x-=p.v*.7; if(p.y>360){p.y=-8; p.x=Math.random()*680;} if(p.x<-10)p.x=650;
-        g.moveTo(p.x,p.y); g.lineTo(p.x-3,p.y+13); }); g.stroke(); }
-    if(kind==='snow'){ g.fillStyle='rgba(255,255,255,.9)';
-      parts.forEach(p=>{ p.y+=p.v; p.x+=Math.sin(t/600+p.ph)*.5; if(p.y>360){p.y=-4; p.x=Math.random()*640;}
-        g.beginPath(); g.arc(p.x,p.y,2.1,0,7); g.fill(); }); }
-    g.strokeStyle='#5d4426'; g.lineWidth=14; g.strokeRect(0,0,640,360); g.lineWidth=7;
-    g.beginPath(); g.moveTo(320,0); g.lineTo(320,360); g.moveTo(0,180); g.lineTo(640,180); g.stroke();
-    wxRAF = requestAnimationFrame(frame);
-  }
-  wxRAF = requestAnimationFrame(frame);
-}
-function stopWx(){ if(wxRAF) cancelAnimationFrame(wxRAF); wxRAF = null; }
-
-/* ---------- 留言板 ---------- */
-const SEED_NOTES = [
-  { name:'屋主 Rae', text:'欢迎来到我的小房间，留张便签再走吧 📌', color:0 },
-  { name:'路过的访客', text:'（示例留言）这个房间也太治愈了，钢琴还会自己弹！', color:2 },
-];
-const NOTE_COLORS = ['#ffd7e8','#fff3a0','#c8ecff','#d9f7c4','#ffe3b3','#f3d1ff'];
-function loadNotes(){ try { return [...SEED_NOTES, ...JSON.parse(localStorage.getItem('rae-room-notes')||'[]')]; } catch(e){ return [...SEED_NOTES]; } }
-function saveNote(name,text){ try { const arr = JSON.parse(localStorage.getItem('rae-room-notes')||'[]'); arr.push({name,text,color:arr.length%6}); localStorage.setItem('rae-room-notes', JSON.stringify(arr.slice(-30))); } catch(e){} }
-function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function guestbookHTML(){
-  const notes = loadNotes().slice(-12).reverse();
-  return `<div class="notes">${notes.map(n=>`<div class="note" style="background:${NOTE_COLORS[n.color%6]}"><b>${esc(n.name)}</b>${esc(n.text)}</div>`).join('')}</div>
-    <form class="gb-form" id="gbForm">
-      <input id="gbName" maxlength="12" placeholder="你的昵称" required>
-      <textarea id="gbText" rows="2" maxlength="80" placeholder="写点什么，钉在墙上…" required></textarea>
-      <button type="submit">📌 钉上去</button>
-    </form>
-    <p class="hint">试玩版说明：留言目前只保存在你自己的浏览器里；正式版会接入留言服务，所有访客都能看到（且会先审后发）。</p>`;
-}
-document.addEventListener('submit', e=>{
-  if(e.target && e.target.id==='gbForm'){ e.preventDefault();
-    saveNote($('gbName').value.trim()||'匿名访客', $('gbText').value.trim());
-    openPanel('📌 留言板', guestbookHTML()); }
-});
 </script>
 </body>
 </html>
