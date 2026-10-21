@@ -107,12 +107,30 @@ function onTap(id){
 }
 window.addMsg=function(){const v=$('gbIn').value;if(!v)return;const d=document.createElement('div');d.textContent='📝 '+v;$('gb').appendChild(d);$('gbIn').value='';};
 say('点一点房间里的东西试试',3500);
-$('fsBtn').addEventListener('click',()=>{
+$('fsBtn').addEventListener('click',async()=>{
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
   if(!document.fullscreenElement){
-    document.documentElement.requestFullscreen().catch(()=>{});
-    $('fsBtn').textContent='⛶';
+    try{
+      if(document.documentElement.requestFullscreen){
+        await document.documentElement.requestFullscreen();
+      }else if(isIOS){
+        // iOS iPhone 不支持 Fullscreen API，尝试锁定横屏
+        if(screen.orientation&&screen.orientation.lock){
+          await screen.orientation.lock('landscape').catch(()=>{});
+        }
+        say('请把手机转到横屏，体验更好',3000);
+        return;
+      }
+      // 尝试锁定横屏（安卓）
+      if(screen.orientation&&screen.orientation.lock){
+        screen.orientation.lock('landscape').catch(()=>{});
+      }
+    }catch(e){
+      say('请把手机转到横屏，体验更好',3000);
+    }
   }else{
     document.exitFullscreen();
+    if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock();
   }
 });
 document.addEventListener('fullscreenchange',()=>{
