@@ -32,13 +32,7 @@
   <!-- 底板 -->
   <image href="assets/plate-night.webp" x="0" y="0" width="1993" height="972"/>
 
-  <!-- 窗户星空（静态） -->
-  <defs><clipPath id="winClip"><rect x="710" y="20" width="620" height="310"/></clipPath></defs>
-  <g clip-path="url(#winClip)">
-    <g id="stars"></g>
-    <circle cx="1150" cy="90" r="28" fill="#f5f3ce"/>
-    <circle cx="1140" cy="82" r="24" fill="#101a3d" opacity="0.3"/>
-  </g>
+  <!-- 窗户：底图自带，无叠加 -->
 
   <!-- 唱片（静态） -->
   <image id="vinyl" href="assets/disc.png" x="1191" y="429" width="116" height="77"/>
@@ -202,21 +196,6 @@ const HINTS = [['piano',249,384],['shelf',458,292],['window',1020,120],['record'
 })();
 function dimHints(d){ document.querySelectorAll('#hints .hint').forEach(h=>h.classList.toggle('dim',d)); }
 function setMusicNote(x,y,s){ const n=$('musicNote'); n.setAttribute('x',x); n.setAttribute('y',y); n.setAttribute('opacity',s?1:0); }
-
-// 生成星星
-(function(){
-  const g = document.getElementById('stars');
-  const NS = "http://www.w3.org/2000/svg";
-  for(let i=0;i<60;i++){
-    const s = document.createElementNS(NS, 'rect');
-    s.setAttribute('x', 720 + Math.random()*600);
-    s.setAttribute('y', 30 + Math.random()*250);
-    s.setAttribute('width', 2.5);
-    s.setAttribute('height', 2.5);
-    s.setAttribute('fill', '#ffeec2');
-    g.appendChild(s);
-  }
-})();
 
 place(boy); place(girl);
 </script>
