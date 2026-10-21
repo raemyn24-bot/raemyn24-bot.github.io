@@ -20,10 +20,7 @@
   #infobar{position:fixed;left:0;right:0;bottom:0;height:48px;z-index:50;background:#1a1a2e;color:#ccc;display:flex;align-items:center;justify-content:center;font-size:13px;padding:0 12px;text-align:center}
   #musicNote{animation:floatUp 2.6s ease-in-out infinite}
   @keyframes floatUp{0%,100%{transform:translateY(0);opacity:.9}50%{transform:translateY(-14px);opacity:.5}}
-  #vinyl{transform-box:fill-box;transform-origin:center}
-  #vinyl.spin{animation:spin 1.8s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .steamP{animation:steamUp 2.2s ease-in-out infinite}
+        .steamP{animation:steamUp 2.2s ease-in-out infinite}
   @keyframes steamUp{0%{transform:translateY(0);opacity:0}30%{opacity:.7}100%{transform:translateY(-26px);opacity:0}}
 </style>
 </head>
@@ -31,7 +28,7 @@
 <div id="stage">
 <svg id="room" viewBox="0 0 1993 972" preserveAspectRatio="xMidYMid meet">
   <image href="assets/plate-night.webp" x="0" y="0" width="1993" height="972"/>
-  <g id="vinyl" opacity="0"><circle cx="1260" cy="530" r="52" fill="#0a0a0a"/><circle cx="1260" cy="530" r="14" fill="#c97a2a"/><circle cx="1260" cy="530" r="4" fill="#f7efdc"/></g>
+  
   <g id="steamG">
     <path class="steamP" d="M1695,556 q7,-11 0,-22 q-7,-11 0,-22" stroke="#fff" stroke-width="3.5" fill="none" opacity="0.65"/>
     <path class="steamP" d="M1707,558 q7,-11 0,-22 q-7,-11 0,-22" stroke="#fff" stroke-width="3.5" fill="none" opacity="0.65" style="animation-delay:.7s"/>
@@ -74,7 +71,7 @@ $('panel').addEventListener('click',e=>{if(e.target.id==='panel')$('panel').clas
 const TRIS=[['piano',240,380],['record',1260,445],['desk',1630,420],['cal',1475,165],['board',1810,250],['window',1110,10]];
 (function(){const g=$('tris');TRIS.forEach(([id,x,y])=>{el('polygon',{points:`${x},${y} ${x-15},${y-22} ${x+15},${y-22}`,fill:'#3d3d4f',stroke:'#14141f','stroke-width':3,class:'tri'},g).dataset.id=id})})();
 const bgm=$('bgm');let playing=false;
-function toggleMusic(){playing=!playing;if(playing){bgm.play().catch(()=>{});$('vinyl').setAttribute('opacity',1);$('vinyl').classList.add('spin');$('musicNote').setAttribute('opacity',1);say('Rae','♪ 萨蒂《Gymnopédie No.1》')}else{bgm.pause();$('vinyl').classList.remove('spin');$('vinyl').setAttribute('opacity',0);$('musicNote').setAttribute('opacity',0);say('Rae','音乐停了。')}}
+function toggleMusic(){playing=!playing;if(playing){bgm.play().catch(()=>{});$('musicNote').setAttribute('opacity',1);say('Rae','♪ 萨蒂《Gymnopédie No.1》')}else{bgm.pause();$('musicNote').setAttribute('opacity',0);say('Rae','音乐停了。')}}
 let weather={temp:19,desc:'多云',hi:22,lo:15,hum:80,ok:false};
 const WMO={0:'晴',1:'晴间多云',2:'多云',3:'阴',45:'雾',48:'雾',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',80:'阵雨',81:'阵雨',82:'暴雨',95:'雷阵雨',96:'雷阵雨',99:'雷阵雨'};
 fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.1551&current=temperature_2m,relative_humidity_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FShanghai').then(r=>r.json()).then(d=>{const c=d.current.weather_code;weather={temp:Math.round(d.current.temperature_2m),desc:WMO[c]||'多云',hi:Math.round(d.daily.temperature_2m_max[0]),lo:Math.round(d.daily.temperature_2m_min[0]),hum:Math.round(d.current.relative_humidity_2m),ok:true}}).catch(()=>{});
