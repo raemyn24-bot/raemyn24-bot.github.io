@@ -71,7 +71,7 @@ const FINGERS=[['record',830,330],['desk',1050,350],['board',1180,210],['window'
     im.addEventListener('click',ev=>{ev.stopPropagation();onTap(id);});
   });
   const tz=$('tapZones');
-  const zones={piano:[60,280,180,140],record:[740,300,180,120],desk:[960,330,180,130],board:[1110,150,140,120],window:[600,10,220,100]};
+  const zones={record:[740,300,180,120],desk:[960,330,180,130],board:[1110,150,140,120],window:[600,10,220,100]};
   for(const id in zones){const [x,y,w,h]=zones[id];
     const r=el('rect',{x:x,y:y,width:w,height:h},tz);
     r.addEventListener('click',ev=>{ev.stopPropagation();onTap(id);});
@@ -86,14 +86,11 @@ function hidePanel(){$('panel').style.display='none';dimFingers(false);}
 
 let playing=false;const bgm=$('bgm');
 function toggleMusic(){
-  playing=!playing;
-  if(playing){bgm.play().catch(()=>{});say('🎹 Gymnopédie No.1');}
-  else{bgm.pause();say('音乐停了');}
+  if(!playing){playing=true;bgm.play().catch(()=>{});}
 }
 function onTap(id){
   hidePanel();
-  if(id==='piano')toggleMusic();
-  else if(id==='record')showPanel('🎵 唱片机','<p>Satie - Gymnopédie No.1</p><p style="color:#888;font-size:13px">点钢琴开始/停止播放</p>');
+  else if(id==='record')showPanel('🎵 唱片机','<p>Satie - Gymnopédie No.1</p><p style="color:#888;font-size:13px">背景音乐：Gymnopédie No.1</p>');
   else if(id==='desk')showPanel('📚 书桌','<p style="color:#888">Rae 的联系方式（待补充）</p>');
   else if(id==='board')showPanel('📌 留言板','<div id="gb"></div><div style="margin-top:8px"><input id="gbIn" placeholder="留句话..." style="width:65%;padding:6px"><button onclick="addMsg()" style="padding:6px 12px">贴</button></div>');
   else if(id==='window'){
