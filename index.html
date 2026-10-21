@@ -2,9 +2,267 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>清空</title>
-<style>html,body{margin:0;padding:0;height:100%;background:#070b16;}</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Rae 的像素小屋</title>
+<style>
+  html,body { margin:0; padding:0; height:100%; background:#070b16; overflow:hidden; -webkit-user-select:none; user-select:none; }
+  #stage { position:fixed; inset:0 0 48px 0; display:flex; align-items:center; justify-content:center; }
+  #room { width:min(100vw,205.04vh); height:min(100vh,48.77vw); display:block; touch-action:manipulation; }
+  .tri { animation:triBob 1.6s ease-in-out infinite; }
+  @keyframes triBob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-8px); } }
+  .tri.dim { opacity:.15; animation:none; }
+  .shadow { fill:rgba(0,0,0,.28); }
+  #dialog { position:fixed; left:50%; transform:translateX(-50%); bottom:58px; width:min(94vw,900px); z-index:50;
+    background:#f7efdc; border:3px solid #7a5c3e; border-radius:12px; padding:10px 16px; font-size:16px; color:#4a3826;
+    box-shadow:0 4px 18px rgba(0,0,0,.45); cursor:pointer; }
+  #dialog .who { font-weight:700; color:#8a5a2b; margin-right:8px; }
+  #panel { position:fixed; inset:0 0 48px 0; z-index:60; display:none; align-items:center; justify-content:center; background:rgba(5,8,18,.72); }
+  #panel.open { display:flex; }
+  #panelCard { width:min(92vw,560px); max-height:80vh; overflow:auto; background:#f7efdc; border:3px solid #7a5c3e; border-radius:14px; padding:18px 20px; color:#4a3826; }
+  #panelCard h2 { margin:0 0 10px; font-size:20px; color:#8a5a2b; }
+  #panelClose { float:right; border:2px solid #7a5c3e; background:#fff; border-radius:8px; padding:4px 12px; cursor:pointer; font-size:15px; }
+  #musicNote { animation:floatUp 2.6s ease-in-out infinite; }
+  @keyframes floatUp { 0%,100% { transform:translateY(0); opacity:.9; } 50% { transform:translateY(-14px); opacity:.5; } }
+  #infobar { position:fixed; left:0; right:0; bottom:0; height:48px; z-index:50; background:#1a1a2e; color:#ccc; 
+    display:flex; align-items:center; justify-content:center; font-size:13px; padding:0 12px; text-align:center; }
+  .steam { animation:steamUp 2.2s ease-in-out infinite; }
+  @keyframes steamUp { 0% { transform:translateY(0); opacity:0; } 30% { opacity:.7; } 100% { transform:translateY(-28px); opacity:0; } }
+  #catTail { transform-box:fill-box; transform-origin:20% 80%; animation:tailWag 2.4s ease-in-out infinite; }
+  @keyframes tailWag { 0%,100% { transform:rotate(-8deg); } 50% { transform:rotate(12deg); } }
+  #vinyl { transform-box:fill-box; transform-origin:center; }
+  #vinyl.spin { animation:spin 1.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
 </head>
 <body>
+<div id="stage">
+<svg id="room" viewBox="0 0 1993 972" preserveAspectRatio="xMidYMid meet">
+  <!-- 底图：Grok 生成 -->
+  <image href="assets/plate-night.webp" x="0" y="0" width="1993" height="972"/>
+
+  <!-- 唱片（可旋转） -->
+  <image id="vinyl" href="assets/disc.png" x="1210" y="500" width="110" height="70"/>
+
+  <!-- 咖啡热气 -->
+  <g id="steam" opacity="0.8">
+    <path class="steam" d="M1520,480 q6,-10 0,-20 q-6,-10 0,-20" stroke="#fff" stroke-width="3" fill="none" opacity="0.6" style="animation-delay:0s"/>
+    <path class="steam" d="M1532,482 q6,-10 0,-20 q-6,-10 0,-20" stroke="#fff" stroke-width="3" fill="none" opacity="0.6" style="animation-delay:0.7s"/>
+  </g>
+
+  <!-- 猫尾巴（摇摆） -->
+  <ellipse id="catTail" cx="720" cy="750" rx="28" ry="10" fill="#6a6a7a"/>
+
+  <!-- 人物 -->
+  <ellipse id="girlShadow" class="shadow" cx="0" cy="0" rx="34" ry="10"/>
+  <image id="girl" href="assets/girl-idle.png" x="0" y="0" width="84" height="148"/>
+  <ellipse id="boyShadow" class="shadow" cx="0" cy="0" rx="38" ry="11"/>
+  <image id="boy" href="assets/boy-idle.png" x="0" y="0" width="94" height="164"/>
+
+  <!-- 音乐音符 -->
+  <text id="musicNote" x="0" y="0" font-size="44" text-anchor="middle" opacity="0">🎵</text>
+
+  <!-- 深灰色像素三角 -->
+  <g id="tris"></g>
+
+  <!-- 点击区 -->
+  <g id="zones" fill="#fff" opacity="0">
+    <rect data-id="piano" x="80" y="400" width="320" height="320"/>
+    <rect data-id="record" x="1080" y="420" width="320" height="220"/>
+    <rect data-id="desk" x="1400" y="460" width="400" height="300"/>
+    <rect data-id="cal" x="1540" y="280" width="100" height="120"/>
+    <rect data-id="board" x="1600" y="260" width="280" height="240"/>
+    <rect data-id="window" x="820" y="40" width="580" height="360"/>
+    <rect data-id="floor" x="0" y="550" width="1993" height="422"/>
+  </g>
+</svg>
+</div>
+
+<div id="dialog"><span class="who">Rae</span><span id="dialogText">点一点房间里的东西，小人会自己走过去。也可以直接点地板走动。</span></div>
+<div id="panel"><div id="panelCard"><button id="panelClose">关闭</button><h2 id="panelTitle"></h2><div id="panelBody"></div></div></div>
+<div id="infobar">🎹钢琴听音乐 · 🎵唱片机 · 💻书桌 · 📅日历 · 📌留言板 · 🌙窗户看天气 —— 点三角互动，点地板走动</div>
+<audio id="bgm" src="assets/gymnopedie.mp3" loop preload="auto"></audio>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const SVGNS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent){ const e = document.createElementNS(SVGNS, tag); for(const k in attrs) e.setAttribute(k, attrs[k]); if(parent) parent.appendChild(e); return e; }
+function say(who, text){ document.querySelector('#dialog .who').textContent = who; document.querySelector('#dialogText').textContent = text; }
+function openPanel(title, html){ $('panelTitle').textContent = title; $('panelBody').innerHTML = html; $('panel').classList.add('open'); }
+$('panelClose').onclick = ()=> $('panel').classList.remove('open');
+$('panel').addEventListener('click', e=>{ if(e.target.id==='panel') $('panel').classList.remove('open'); });
+
+/* ---------- 深灰色三角 ---------- */
+const TRIS = [
+  ['piano', 240, 380], ['record', 1240, 400], ['desk', 1600, 440],
+  ['cal', 1590, 260], ['board', 1740, 240], ['window', 1100, 30]
+];
+(function(){
+  const g = $('tris');
+  TRIS.forEach(([id, x, y])=>{
+    // 像素风深灰色三角形
+    const p = el('polygon', {
+      points: `${x},${y} ${x-16},${y-24} ${x+16},${y-24}`,
+      fill: '#3a3a4a', stroke: '#1a1a2a', 'stroke-width': 3, class: 'tri'
+    }, g);
+    p.dataset.id = id;
+  });
+})();
+function dimTris(d){ document.querySelectorAll('#tris .tri').forEach(t=>t.classList.toggle('dim', d)); }
+
+/* ---------- BGM ---------- */
+const bgm = $('bgm');
+let playing = false;
+function toggleMusic(){
+  playing = !playing;
+  if(playing){
+    bgm.play().catch(()=>{});
+    $('vinyl').classList.add('spin');
+    setMusicNote(boy.x, boy.y-190, true);
+    say('Rae', '♪ 萨蒂《Gymnopédie No.1》');
+  } else {
+    bgm.pause();
+    $('vinyl').classList.remove('spin');
+    setMusicNote(0,0,false);
+    say('Rae', '音乐停了。');
+  }
+}
+function setMusicNote(x,y,s){ const n=$('musicNote'); n.setAttribute('x',x); n.setAttribute('y',y); n.setAttribute('opacity',s?1:0); }
+
+/* ---------- 面板 ---------- */
+let weather = { temp:19, desc:'多云', kind:'cloud', hi:22, lo:15, hum:80, ok:false };
+const WMO = {0:'晴',1:'晴间多云',2:'多云',3:'阴',45:'雾',48:'雾',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',80:'阵雨',81:'阵雨',82:'暴雨',95:'雷阵雨',96:'雷阵雨',99:'雷阵雨'};
+fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.1551&current=temperature_2m,relative_humidity_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FShanghai')
+  .then(r=>r.json()).then(d=>{
+    const c = d.current.weather_code;
+    weather = { temp:Math.round(d.current.temperature_2m), desc:WMO[c]||'多云',
+      hi:Math.round(d.daily.temperature_2m_max[0]), lo:Math.round(d.daily.temperature_2m_min[0]),
+      hum:Math.round(d.current.relative_humidity_2m), ok:true };
+  }).catch(()=>{});
+
+const PANELS = {
+  piano: ['🎹 钢琴', '<p>萨蒂《Gymnopédie No.1》</p><button onclick="toggleMusic()" style="padding:8px 20px;">播放 / 停止</button>'],
+  record: ['🎵 唱片机', '<p>正在播放：萨蒂《Gymnopédie No.1》</p><p>黑胶唱片，转速 33⅓ RPM</p>'],
+  desk: ['💻 书桌', '<p>Rae 的联系方式</p><p><i>（等 Rae 提供内容）</i></p>'],
+  cal: ['📅 日历', ''],
+  board: ['📌 留言板', '<div id="gbList"></div><input id="gbName" placeholder="名字" style="width:30%"><input id="gbText" placeholder="留句话吧" style="width:60%"><button onclick="addNote()">贴上</button>'],
+  window: ['🌙 窗外 · 杭州', ''],
+};
+function updateCalPanel(){
+  const d = new Date(), wk = '日一二三四五六'[d.getDay()];
+  return `<p style="font-size:36px;">${d.getMonth()+1}月${d.getDate()}日</p><p>星期${wk}</p>`;
+}
+function updateWeatherPanel(){
+  const d = new Date(), wk = '日一二三四五六'[d.getDay()];
+  return `<p style="font-size:32px;">${weather.temp}°C ${weather.desc}</p><p>杭州 · 今日 ${weather.lo}°~${weather.hi}° · 湿度${weather.hum}%</p><p>${d.getMonth()+1}月${d.getDate()}日 星期${wk}${weather.ok?'':'（离线数据）'}</p>`;
+}
+let notes = JSON.parse(localStorage.getItem('rae_notes')||'[{"n":"屋主 Rae","t":"欢迎来到我的小房间！"}]');
+function renderNotes(){ const l=$('gbList'); if(l) l.innerHTML = notes.map(n=>`<p><b>${n.n}:</b> ${n.t}</p>`).join(''); }
+function addNote(){ const n=$('gbName').value.trim()||'匿名', t=$('gbText').value.trim(); if(!t) return; notes.push({n,t}); localStorage.setItem('rae_notes',JSON.stringify(notes)); renderNotes(); $('gbText').value=''; }
+
+/* ---------- 人物移动 ---------- */
+const boy = { el:$('boy'), sh:$('boyShadow'), x:850, y:700, w:94, h:164 };
+const girl = { el:$('girl'), sh:$('girlShadow'), x:770, y:700, w:84, h:148 };
+function place(p){ p.el.setAttribute('x', p.x-p.w/2); p.el.setAttribute('y', p.y-p.h); p.sh.setAttribute('cx', p.x); p.sh.setAttribute('cy', p.y+6); }
+place(boy); place(girl);
+let girlTarget = null, walking = false;
+
+// 家具障碍（简化版）
+const OBSTACLES = [
+  {x0:80, x1:400, y0:400, y1:720},    // 钢琴
+  {x0:280, x1:600, y0:160, y1:600},   // 书架
+  {x0:1080, x1:1400, y0:420, y1:640}, // 唱片柜
+  {x0:1400, x1:1800, y0:460, y1:760}, // 书桌
+];
+function walkTo(tx, ty, done){
+  if(walking) return; walking = true;
+  dimTris(true);
+  girlTarget = { x: tx-80, y: ty };
+  const speed = 280;
+  let last = performance.now();
+  // 简单绕障：如果目标在障碍里，移到障碍下方
+  OBSTACLES.forEach(r=>{
+    if(tx>r.x0 && tx<r.x1 && ty>r.y0 && ty<r.y1){ ty = r.y1 + 40; }
+  });
+  function step(t){
+    const dt = Math.min(50, t-last)/1000; last = t;
+    const dx = tx-boy.x, dy = ty-boy.y, dist = Math.hypot(dx,dy);
+    if(dist < 10){
+      walking = false; dimTris(false);
+      boy.el.style.transform = '';
+      walkGirl();
+      if(done) done();
+      return;
+    }
+    boy.x += dx/dist*speed*dt; boy.y += dy/dist*speed*dt;
+    const flip = dx<0 ? 'scaleX(-1) ' : '';
+    const bob = Math.sin(t/160)*7;
+    const sway = Math.sin(t/320)*3;
+    boy.el.style.transform = `${flip}translateY(${bob}px) rotate(${sway}deg)`;
+    boy.el.style.transformBox = 'fill-box'; boy.el.style.transformOrigin = 'center bottom';
+    place(boy);
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function walkGirl(){
+  if(!girlTarget) return;
+  const tx = girlTarget.x, ty = girlTarget.y;
+  const speed = 250;
+  let last = performance.now();
+  function step(t){
+    const dt = Math.min(50, t-last)/1000; last = t;
+    const dx = tx-girl.x, dy = ty-girl.y, d = Math.hypot(dx,dy);
+    if(d < 12){ girl.el.style.transform=''; place(girl); return; }
+    girl.x += dx/d*speed*dt; girl.y += dy/d*speed*dt;
+    const flip = dx<0 ? 'scaleX(-1) ' : '';
+    const bob = Math.sin(t/160)*6;
+    girl.el.style.transform = `${flip}translateY(${bob}px)`;
+    girl.el.style.transformBox = 'fill-box'; girl.el.style.transformOrigin = 'center bottom';
+    place(girl);
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ---------- 点击 ---------- */
+const STAND = {
+  piano:[240,650], record:[1240,680], desk:[1600,720],
+  cal:[1590,650], board:[1740,620], window:[1100,580]
+};
+document.querySelectorAll('#zones rect').forEach(z=>{
+  z.style.cursor='pointer'; z.style.pointerEvents='all';
+  z.addEventListener('click', e=>{
+    const id = z.dataset.id;
+    if(id==='floor'){
+      // 点击地板：直接走过去，不触发面板
+      const pt = svgPoint(e);
+      walkTo(pt.x, Math.min(850, Math.max(600, pt.y)), null);
+      say('Rae', '走过去看看。');
+      return;
+    }
+    const [tx,ty] = STAND[id];
+    walkTo(tx, ty, ()=>{
+      if(id==='piano') toggleMusic();
+      else {
+        let [t,h] = PANELS[id];
+        if(id==='cal') h = updateCalPanel();
+        if(id==='window') h = updateWeatherPanel();
+        openPanel(t,h);
+        if(id==='board') renderNotes();
+      }
+    });
+  });
+});
+function svgPoint(e){
+  const svg = $('room');
+  const pt = svg.createSVGPoint();
+  pt.x = e.clientX; pt.y = e.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+$('dialog').onclick = ()=> $('panel').classList.remove('open');
+
+place(boy); place(girl);
+</script>
 </body>
 </html>
