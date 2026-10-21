@@ -9,28 +9,24 @@
   #stage { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
   #room { width:min(100vw,205.04vh); height:min(100vh,48.77vw); display:block; touch-action:manipulation; }
   #room text { font-family:"PingFang SC","Microsoft YaHei",sans-serif; }
-  /* 唱片旋转 */
   #vinyl { transform-box:fill-box; transform-origin:center; }
   #vinyl.spin { animation:spin 1.8s linear infinite; }
   @keyframes spin { to { transform:rotate(360deg); } }
-  /* 提示箭头浮动 */
   .hint { animation:hintBob 1.8s ease-in-out infinite; }
   @keyframes hintBob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
   .hint.dim { opacity:.15; animation:none; }
-  /* 人物阴影 */
   .shadow { fill:rgba(0,0,0,.28); }
-  /* 对话条 */
+  @keyframes walkBob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-6px); } }
+  .walking { animation:walkBob .36s ease-in-out infinite; }
   #dialog { position:fixed; left:50%; transform:translateX(-50%); bottom:max(10px, env(safe-area-inset-bottom)); width:min(94vw,900px); z-index:50;
     background:#f7efdc; border:3px solid #7a5c3e; border-radius:12px; padding:10px 16px; font-size:16px; color:#4a3826;
     box-shadow:0 4px 18px rgba(0,0,0,.45); cursor:pointer; }
   #dialog .who { font-weight:700; color:#8a5a2b; margin-right:8px; }
-  /* 面板 */
   #panel { position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; background:rgba(5,8,18,.72); }
   #panel.open { display:flex; }
   #panelCard { width:min(92vw,560px); max-height:86vh; overflow:auto; background:#f7efdc; border:3px solid #7a5c3e; border-radius:14px; padding:18px 20px; color:#4a3826; }
   #panelCard h2 { margin:0 0 10px; font-size:20px; color:#8a5a2b; }
   #panelClose { float:right; border:2px solid #7a5c3e; background:#fff; border-radius:8px; padding:4px 12px; cursor:pointer; font-size:15px; }
-  /* 音乐图标 */
   #musicNote { animation:floatUp 2.6s ease-in-out infinite; }
   @keyframes floatUp { 0%,100% { transform:translateY(0); opacity:.9; } 50% { transform:translateY(-14px); opacity:.5; } }
 </style>
@@ -39,31 +35,31 @@
 <div id="stage">
 <svg id="room" viewBox="0 0 1993 972" preserveAspectRatio="xMidYMid meet">
   <defs>
-    <clipPath id="winClip"><rect x="730" y="10" width="550" height="220" rx="4"/></clipPath>
+    <clipPath id="winClip"><rect x="710" y="20" width="620" height="310" rx="4"/></clipPath>
   </defs>
 
-  <!-- ===== 底板（夜/日） ===== -->
+  <!-- 底板：只有黑夜 -->
   <image id="plateNight" href="assets/plate-night.webp" x="0" y="0" width="1993" height="972"/>
 
-  <!-- ===== 天气（窗户里） ===== -->
+  <!-- 天气：窗户里（730,10,550x220），黑夜版 -->
   <g id="wx" clip-path="url(#winClip)">
-    <rect id="wxSky" x="730" y="10" width="550" height="220" fill="#101a3d"/>
+    <rect id="wxSky" x="710" y="20" width="620" height="310" fill="#101a3d"/>
     <g id="wxSunMoon"></g>
     <g id="wxClouds"></g>
     <g id="wxCity"></g>
     <g id="wxPrecip"></g>
     <polygon id="wxBolt" points="" fill="#fffbe0" opacity="0"/>
-    <rect id="wxFlash" x="730" y="10" width="550" height="220" fill="#ffffff" opacity="0"/>
+    <rect id="wxFlash" x="710" y="20" width="620" height="310" fill="#ffffff" opacity="0"/>
   </g>
 
-  <!-- ===== 钢琴键（12键） ===== -->
+  <!-- 钢琴键：12键，透明覆盖（150,450)-(350,480)，按下时高亮 -->
   <g id="keys"></g>
 
-  <!-- ===== 唱片 ===== -->
+  <!-- 唱片：带阴影 -->
   <ellipse id="vinylShadow" cx="1249" cy="510" rx="58" ry="10" fill="rgba(0,0,0,.35)"/>
   <image id="vinyl" href="assets/disc.png" x="1191" y="429" width="116" height="77"/>
 
-  <!-- ===== 日历（挂墙） ===== -->
+  <!-- 日历：挂墙，无文字标签 -->
   <g id="cal">
     <circle cx="1505" cy="88" r="6" fill="#4a4a4a" stroke="#222" stroke-width="2"/>
     <line x1="1505" y1="88" x2="1478" y2="118" stroke="#8a6d4a" stroke-width="3"/>
@@ -71,35 +67,33 @@
     <rect x="1449" y="124" width="120" height="180" rx="8" fill="rgba(0,0,0,.25)"/>
     <rect x="1445" y="120" width="120" height="180" rx="8" fill="#f7f1e3" stroke="#7a5c3e" stroke-width="5"/>
     <rect x="1445" y="120" width="120" height="42" fill="#c0392b"/>
-    <text id="calM" x="1505" y="150" text-anchor="middle" font-size="26" font-weight="700" fill="#fff">10月</text>
-    <text id="calD" x="1505" y="225" text-anchor="middle" font-size="64" font-weight="800" fill="#333">21</text>
-    <text id="calW" x="1505" y="268" text-anchor="middle" font-size="24" fill="#666">星期三</text>
   </g>
 
-  <!-- ===== 猫 ===== -->
+  <!-- 猫：无粉色，全灰 -->
   <ellipse class="shadow" cx="1148" cy="800" rx="110" ry="18"/>
   <image id="cat" href="assets/cat-body.png" x="1032" y="700" width="233" height="106"/>
 
-  <!-- ===== 人物 ===== -->
+  <!-- 人物 -->
   <ellipse id="girlShadow" class="shadow" cx="0" cy="0" rx="34" ry="10"/>
   <image id="girl" href="assets/girl-idle.png" x="0" y="0" width="84" height="148"/>
   <ellipse id="boyShadow" class="shadow" cx="0" cy="0" rx="38" ry="11"/>
   <image id="boy" href="assets/boy-idle.png" x="0" y="0" width="94" height="164"/>
 
-  <!-- ===== 音乐图标 ===== -->
+  <!-- 音乐图标 -->
   <text id="musicNote" x="0" y="0" font-size="44" text-anchor="middle" opacity="0">🎵</text>
 
-  <!-- ===== 提示箭头 ===== -->
+  <!-- 提示箭头：无文字 -->
   <g id="hints"></g>
 
-  <!-- ===== 点击区 ===== -->
+  <!-- 点击区：7个，互不重叠 -->
   <g id="zones" fill="#fff" opacity="0">
     <rect data-id="piano" x="58" y="258" width="182" height="442"/>
     <rect data-id="shelf" x="246" y="106" width="412" height="454"/>
-    <rect data-id="window" x="735" y="5" width="685" height="400"/>
-    <rect data-id="record" x="1000" y="420" width="353" height="232"/>
-    <rect data-id="desk" x="1295" y="258" width="477" height="469"/>
-    <rect data-id="board" x="1613" y="164" width="301" height="356"/>
+    <rect data-id="window" x="710" y="20" width="620" height="310"/>
+    <rect data-id="record" x="1000" y="380" width="353" height="272"/>
+    <rect data-id="desk" x="1353" y="420" width="417" height="310"/>
+    <rect data-id="board" x="1613" y="164" width="301" height="236"/>
+    <rect data-id="cal" x="1445" y="88" width="120" height="212"/>
   </g>
 </svg>
 </div>
@@ -113,32 +107,14 @@
 const SVGNS = "http://www.w3.org/2000/svg";
 const $ = id => document.getElementById(id);
 const svg = $('room');
-let wxAnim = null; // 天气动画句柄（提前声明，避免TDZ）
+let wxAnim = null;
 let weather = { temp:19, desc:'小雨', kind:'rain', hi:20, lo:14, hum:91, ok:false };
 function el(tag, attrs, parent){ const e = document.createElementNS(SVGNS, tag); for(const k in attrs) e.setAttribute(k, attrs[k]); if(parent) parent.appendChild(e); return e; }
 
-/* ---------- 基础 ---------- */
-const isDayNow = ()=> false; // 只有黑夜
 function say(who, text){ $('dialog').querySelector('.who').textContent = who; $('dialogText').textContent = text; }
-function openPanel(title, html){ $('panelTitle').textContent = title; $('panelBody').innerHTML = html; $('panel').classList.add('open'); stopWxPanel(); }
-$('panelClose').onclick = ()=>{ $('panel').classList.remove('open'); stopWxPanel(); };
-$('panel').addEventListener('click', e=>{ if(e.target.id==='panel') { $('panel').classList.remove('open'); stopWxPanel(); } });
-
-/* ---------- 日历真实日期 ---------- */
-(function(){
-  const d = new Date();
-  $('calM').textContent = (d.getMonth()+1)+'月';
-  $('calD').textContent = d.getDate();
-  $('calW').textContent = '星期'+'日一二三四五六'[d.getDay()];
-})();
-
-/* ---------- 昼夜切换 ---------- */
-function applyDayNight(){
-  // 只有黑夜，不再区分
-  buildKeys(KEYS_NIGHT);
-  placeVinyl(VINYL_NIGHT);
-  if(typeof drawWeather === 'function') drawWeather();
-}
+function openPanel(title, html){ $('panelTitle').textContent = title; $('panelBody').innerHTML = html; $('panel').classList.add('open'); }
+$('panelClose').onclick = ()=>{ $('panel').classList.remove('open'); };
+$('panel').addEventListener('click', e=>{ if(e.target.id==='panel') $('panel').classList.remove('open'); });
 
 /* ---------- BGM ---------- */
 const bgm = $('bgm');
@@ -168,6 +144,7 @@ const PANELS = {
   desk: ['💻 书桌', '<p>Rae 的工作台。</p><p><i>（等 Rae 发来介绍和联系方式）</i></p>'],
   board: ['📌 留言板', '<div id="gbList"></div><input id="gbName" placeholder="名字" style="width:30%"><input id="gbText" placeholder="留句话吧" style="width:60%"><button onclick="addNote()">贴上</button>'],
   record: ['🎵 唱片机', '<p>黑胶唱机。点钢琴开始播放，唱片就会转。</p>'],
+  cal: ['📅 日历', ''],
 };
 function updateWeatherPanel(){
   const d = new Date(), wk = '日一二三四五六'[d.getDay()];
@@ -175,17 +152,28 @@ function updateWeatherPanel(){
     <p>今日 ${weather.lo}° ~ ${weather.hi}°C · 湿度 ${weather.hum}% · ${d.getMonth()+1}月${d.getDate()}日 星期${wk}${weather.ok?'':'（天气接口没连上，兜底数据）'}</p>
     <p>窗外现在就是这个天气 ☁️</p>`;
 }
-// 留言板
+function updateCalPanel(){
+  const d = new Date(), wk = '日一二三四五六'[d.getDay()];
+  return `<p style="font-size:34px;margin:6px 0;">${d.getMonth()+1}月${d.getDate()}日</p><p>星期${wk}</p>`;
+}
 let notes = JSON.parse(localStorage.getItem('rae_notes')||'[{"n":"屋主 Rae","t":"欢迎来到我的小房间，留张便签再走吧 📌"}]');
 function renderNotes(){ const l=$('gbList'); if(!l) return; l.innerHTML = notes.map(n=>`<p><b>${n.n}:</b> ${n.t}</p>`).join(''); }
 function addNote(){ const n=$('gbName').value.trim()||'匿名', t=$('gbText').value.trim(); if(!t) return; notes.push({n,t}); localStorage.setItem('rae_notes',JSON.stringify(notes)); renderNotes(); $('gbText').value=''; }
 
 /* ---------- 点击触发 ---------- */
-const STAND = { piano:[300,640], shelf:[480,620], window:[965,560], record:[1176,640], desk:[1500,700], board:[1764,620] };
+const STAND = { piano:[300,640], shelf:[480,620], window:[965,560], record:[1176,640], desk:[1500,700], board:[1764,620], cal:[1505,650] };
 document.querySelectorAll('#zones rect').forEach(z=>{
   z.style.cursor='pointer'; z.style.pointerEvents='all';
   z.addEventListener('click', ()=>{
     const id = z.dataset.id;
+    if(id==='cal'){
+      const [tx,ty] = STAND.cal;
+      walkTo(tx, ty, ()=>{
+        let [t,h] = PANELS.cal; h = updateCalPanel();
+        openPanel(t,h); say('Rae','今天是'+new Date().getMonth()+1+'月'+new Date().getDate()+'日。');
+      });
+      return;
+    }
     const [tx,ty] = STAND[id];
     walkTo(tx, ty, ()=>{
       if(id==='piano') toggleMusic();
@@ -199,26 +187,36 @@ document.querySelectorAll('#zones rect').forEach(z=>{
     });
   });
 });
-// 点空白处关闭面板
 $('dialog').onclick = ()=>{ $('panel').classList.remove('open'); };
-function stopWxPanel(){}
 
+/* ---------- 人物 ---------- */
 const boy = { el:$('boy'), sh:$('boyShadow'), x:877, y:758, w:94, h:164 };
 const girl = { el:$('girl'), sh:$('girlShadow'), x:797, y:758, w:84, h:148 };
 function place(p){ p.el.setAttribute('x', p.x-p.w/2); p.el.setAttribute('y', p.y-p.h); p.sh.setAttribute('cx', p.x); p.sh.setAttribute('cy', p.y+6); }
 place(boy); place(girl);
-// 女孩跟着男孩
 let girlTarget = null;
 
-/* 简易寻路：直线 + 绕开猫 */
-const CAT = { x0:1032, x1:1265, y0:720, y1:806 };
+const OBSTACLES = [
+  { x0:1032, x1:1265, y0:720, y1:806 },
+  { x0:30, x1:450, y0:258, y1:700 },
+  { x0:240, x1:660, y0:106, y1:560 },
+  { x0:980, x1:1353, y0:380, y1:652 },
+  { x0:1290, x1:1770, y0:420, y1:730 },
+];
+function segHitsRect(x0,y0,x1,y1,r){
+  const inR = (x,y)=> x>r.x0-20 && x<r.x1+20 && y>r.y0-20 && y<r.y1+20;
+  for(let t=0; t<=1; t+=0.1){
+    if(inR(x0+(x1-x0)*t, y0+(y1-y0)*t)) return true;
+  }
+  return false;
+}
 function planPath(x0,y0,x1,y1){
   const pts = [[x0,y0]];
-  // 如果直线穿过猫，加绕行点
-  const inCat = (x,y)=> x>CAT.x0-30 && x<CAT.x1+30 && y>CAT.y0-20 && y<CAT.y1+20;
-  if(inCat((x0+x1)/2,(y0+y1)/2) || inCat(x1,y1)){
-    pts.push([(CAT.x0+CAT.x1)/2, CAT.y1+60]);
-  }
+  OBSTACLES.forEach(r=>{
+    if(segHitsRect(x0,y0,x1,y1,r)){
+      pts.push([(r.x0+r.x1)/2, r.y1+70]);
+    }
+  });
   pts.push([x1,y1]);
   return pts;
 }
@@ -226,11 +224,11 @@ let walking = false;
 function walkTo(tx, ty, done){
   if(walking) return; walking = true;
   dimHints(true);
+  boy.el.classList.add('walking'); girl.el.classList.add('walking');
   const path = planPath(boy.x, boy.y, tx, ty);
   let si = 0;
-  const speed = 260; // px/s
+  const speed = 260;
   let last = performance.now();
-  // 女孩跟随目标
   girlTarget = { x: tx-80, y: ty };
   function step(t){
     const dt = Math.min(50, t-last)/1000; last = t;
@@ -240,14 +238,13 @@ function walkTo(tx, ty, done){
       si++;
       if(si >= path.length){
         walking = false; dimHints(false);
-        // 女孩走过去
+        boy.el.classList.remove('walking'); girl.el.classList.remove('walking');
         walkGirl();
         if(done) done();
         return;
       }
     } else {
       boy.x += dx/dist*speed*dt; boy.y += dy/dist*speed*dt;
-      // 朝向（翻转）
       boy.el.style.transform = dx<0 ? 'scaleX(-1)' : '';
       boy.el.style.transformBox = 'fill-box'; boy.el.style.transformOrigin = 'center';
       place(boy);
@@ -259,8 +256,6 @@ function walkTo(tx, ty, done){
 function walkGirl(){
   if(!girlTarget) return;
   const tx = girlTarget.x, ty = girlTarget.y;
-  const dx = tx-girl.x, dy = ty-girl.y, dist = Math.hypot(dx,dy);
-  if(dist < 10) return;
   const speed = 240;
   let last = performance.now();
   function step(t){
@@ -276,13 +271,14 @@ function walkGirl(){
   requestAnimationFrame(step);
 }
 
+/* ---------- 钢琴键 ---------- */
 const KEYS_NIGHT = { x0:150, y0:450, x1:350, y1:480 };
 const KEYS = { n:12, els:[], cur:null };
 function buildKeys(pos){
   const g = $('keys'); g.innerHTML=''; KEYS.els=[];
-  const kw = (pos.x1-pos.x0)/KEYS.n;
+  const kw = (pos.x1-pos.x0)/KEYS.n, kh = pos.y1-pos.y0;
   for(let i=0;i<KEYS.n;i++){
-    const r = el('rect',{ x:pos.x0+i*kw+1, y:pos.y0, width:kw-2, height:pos.y1-pos.y0, fill:'#f2ede2', 'fill-opacity':0, stroke:'none' },g);
+    const r = el('rect',{ x:pos.x0+i*kw+1, y:pos.y0, width:kw-2, height:kh, fill:'#c9a86a', 'fill-opacity':0, stroke:'none' },g);
     KEYS.els.push(r);
   }
   KEYS.cur = pos;
@@ -290,15 +286,18 @@ function buildKeys(pos){
 function pressKey(i, down){
   const r = KEYS.els[i]; if(!r || !KEYS.cur) return;
   r.setAttribute('fill-opacity', down ? 0.7 : 0);
-  r.setAttribute('fill', '#c9a86a');
   r.setAttribute('y', down ? KEYS.cur.y0+4 : KEYS.cur.y0);
 }
-/* ---------- 唱片（日夜双坐标） ---------- */
-const VINYL_NIGHT = { x:1191, y:429, w:116, h:77 };
-function placeVinyl(pos){ const v=$('vinyl'); v.setAttribute('x',pos.x); v.setAttribute('y',pos.y); v.setAttribute('width',pos.w); v.setAttribute('height',pos.h); }
 
-/* ---------- 提示箭头（像素风） ---------- */
-const HINTS = [ ['piano',249,384], ['shelf',458,292], ['window',1096,160], ['record',1176,437], ['desk',1574,408], ['board',1764,292] ];
+/* ---------- 唱片 ---------- */
+const VINYL_NIGHT = { x:1191, y:429, w:116, h:77 };
+function placeVinyl(pos){
+  const v=$('vinyl'); v.setAttribute('x',pos.x); v.setAttribute('y',pos.y); v.setAttribute('width',pos.w); v.setAttribute('height',pos.h);
+  const s=$('vinylShadow'); s.setAttribute('cx', pos.x+pos.w/2); s.setAttribute('cy', pos.y+pos.h+4); s.setAttribute('rx', pos.w/2);
+}
+
+/* ---------- 提示箭头 ---------- */
+const HINTS = [ ['piano',249,384], ['shelf',458,292], ['window',1020,120], ['record',1176,437], ['desk',1574,408], ['board',1764,292] ];
 (function(){
   const g = $('hints');
   HINTS.forEach(([id,x,y])=>{
@@ -311,6 +310,7 @@ function dimHints(dim){ document.querySelectorAll('#hints .hint').forEach(h=>h.c
 /* ---------- 音乐图标 ---------- */
 function setMusicNote(x,y,show){ const n=$('musicNote'); n.setAttribute('x',x); n.setAttribute('y',y); n.setAttribute('opacity',show?1:0); }
 
+/* ---------- 天气（黑夜版，杭州） ---------- */
 const WMO = {0:'晴',1:'晴间多云',2:'多云',3:'阴',45:'雾',48:'雾',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',80:'阵雨',81:'阵雨',82:'暴雨阵雨',85:'阵雪',86:'阵雪',95:'雷阵雨',96:'雷阵雨',99:'雷阵雨'};
 function wmoKind(c){ if([95,96,99].includes(c)) return 'storm'; if([51,53,55,61,63,65,80,81,82].includes(c)) return 'rain'; if([71,73,75,77,85,86].includes(c)) return 'snow'; if(c===0) return 'clear'; if([1,2].includes(c)) return 'cloud'; return 'overcast'; }
 fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.1551&current=temperature_2m,relative_humidity_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FShanghai')
@@ -321,45 +321,36 @@ fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.155
     drawWeather();
   }).catch(()=>{});
 
-/* ---------- SVG 天气（窗户里，750,15,655x380） ---------- */
-const WX = { x:730, y:10, w:550, h:220 };
+const WX = { x:710, y:20, w:620, h:310 };
 function drawWeather(){
   if(wxAnim) cancelAnimationFrame(wxAnim);
-  const day = isDayNow(), kind = weather.kind;
+  const kind = weather.kind;
   const gSun = $('wxSunMoon'), gCl = $('wxClouds'), gCity = $('wxCity'), gPr = $('wxPrecip');
   [gSun,gCl,gCity,gPr].forEach(g=>g.innerHTML='');
   $('wxBolt').setAttribute('points',''); $('wxBolt').setAttribute('opacity',0);
-  // 天空
   const sky = $('wxSky');
-  if(kind==='overcast'||kind==='rain'||kind==='storm') sky.setAttribute('fill', day?'#7a8ba3':'#1a2340');
-  else sky.setAttribute('fill', day?'#5f9de0':'#101a3d');
-  // 太阳/月亮/星星
+  if(kind==='overcast'||kind==='rain'||kind==='storm') sky.setAttribute('fill', '#1a2340');
+  else sky.setAttribute('fill', '#101a3d');
   if(kind==='clear'||kind==='cloud'){
-    if(day){ el('circle',{cx:1005,cy:60,r:28,fill:'#ffd94d'},gSun); el('circle',{cx:1005,cy:60,r:38,fill:'#ffd94d','fill-opacity':.3},gSun); }
-    else {
-      for(let i=0;i<50;i++) el('rect',{x:WX.x+Math.random()*WX.w, y:WX.y+Math.random()*180, width:2.5, height:2.5, fill:'#ffeec2'},gSun);
-      el('circle',{cx:1005,cy:60,r:22,fill:'#f5d76e'},gSun); el('circle',{cx:997,cy:54,r:18,fill:'#101a3d'},gSun);
-    }
+    for(let i=0;i<40;i++) el('rect',{x:WX.x+Math.random()*WX.w, y:WX.y+Math.random()*120, width:2.5, height:2.5, fill:'#ffeec2'},gSun);
+    el('circle',{cx:1005,cy:60,r:22,fill:'#f5d76e'},gSun); el('circle',{cx:997,cy:54,r:18,fill:'#101a3d'},gSun);
   }
-  // 云
   const nCl = kind==='clear'?3 : kind==='cloud'?5 : 7;
   const clouds = [];
   for(let i=0;i<nCl;i++){
     const c = el('g',{},gCl);
-    const cx = WX.x + i*(WX.w/nCl) + Math.random()*40, cy = WX.y+40+Math.random()*60, w = 90+Math.random()*70;
-    el('ellipse',{cx, cy, rx:w/2, ry:16, fill: day?(kind==='clear'?'#ffffff':'#eef2f8'):'#4a5a85','fill-opacity':.92},c);
-    el('ellipse',{cx:cx+24, cy:cy-10, rx:w/3, ry:13, fill: day?(kind==='clear'?'#ffffff':'#eef2f8'):'#4a5a85','fill-opacity':.92},c);
+    const cx = WX.x + i*(WX.w/nCl) + Math.random()*40, cy = WX.y+30+Math.random()*40, w = 80+Math.random()*60;
+    el('ellipse',{cx, cy, rx:w/2, ry:14, fill:'#4a5a85','fill-opacity':.92},c);
+    el('ellipse',{cx:cx+20, cy:cy-8, rx:w/3, ry:11, fill:'#4a5a85','fill-opacity':.92},c);
     clouds.push({e:c, x:cx, ox:cx, v:.2+Math.random()*.3});
   }
-  // 城市剪影
   const cityB = [[740,140,55,66],[805,160,45,46],[855,135,65,71],[930,155,50,51],[985,140,60,66],[1055,165,45,41],[1110,145,62,61],[1180,160,50,46],[1235,150,40,56]];
-  cityB.forEach(b=> el('rect',{x:b[0],y:b[1],width:b[2],height:b[3],fill: day?'#5d7ba6':'#0c1330'},gCity));
-  if(!day) for(let i=0;i<40;i++) el('rect',{x:745+((i*53)%520), y:145+((i*29)%55), width:4, height:4, fill:'#ffca7a'},gCity);
-  el('rect',{x:WX.x, y:WX.y+WX.h-24, width:WX.w, height:24, fill: day?'#7d94b5':'#090f24'},gCity);
-  // 降水粒子
+  cityB.forEach(b=> el('rect',{x:b[0],y:b[1],width:b[2],height:b[3],fill:'#0c1330'},gCity));
+  for(let i=0;i<40;i++) el('rect',{x:745+((i*53)%520), y:145+((i*29)%55), width:4, height:4, fill:'#ffca7a'},gCity);
+  el('rect',{x:WX.x, y:WX.y+WX.h-20, width:WX.w, height:20, fill:'#090f24'},gCity);
   const parts = [];
-  if(kind==='rain'||kind==='storm') for(let i=0;i<110;i++) parts.push({t:'r', x:WX.x+Math.random()*WX.w, y:WX.y+Math.random()*WX.h, v:7+Math.random()*5});
-  if(kind==='snow') for(let i=0;i<70;i++) parts.push({t:'s', x:WX.x+Math.random()*WX.w, y:WX.y+Math.random()*WX.h, v:.8+Math.random(), ph:Math.random()*6.28});
+  if(kind==='rain'||kind==='storm') for(let i=0;i<90;i++) parts.push({t:'r', x:WX.x+Math.random()*WX.w, y:WX.y+Math.random()*WX.h, v:7+Math.random()*5});
+  if(kind==='snow') for(let i=0;i<60;i++) parts.push({t:'s', x:WX.x+Math.random()*WX.w, y:WX.y+Math.random()*WX.h, v:.8+Math.random(), ph:Math.random()*6.28});
   let flashT = 0, flash = 0;
   function frame(t){
     clouds.forEach(c=>{ c.x += c.v; if(c.x - 80 > WX.x+WX.w) c.x = WX.x - 80; c.e.setAttribute('transform', `translate(${c.x-c.ox},0)`); });
@@ -376,7 +367,7 @@ function drawWeather(){
       if(flash>0){ flash--;
         $('wxFlash').setAttribute('opacity', .5*(flash/14));
         if(flash>8){ const lx=830+Math.random()*300;
-          $('wxBolt').setAttribute('points', `${lx},15 ${lx-32},105 ${lx+8},105 ${lx-42},215 ${lx-6},215 ${lx-48},345`);
+          $('wxBolt').setAttribute('points', `${lx},10 ${lx-28},90 ${lx+6},90 ${lx-36},180 ${lx-4},180 ${lx-40},230`);
           $('wxBolt').setAttribute('opacity',.95);
         } else $('wxBolt').setAttribute('opacity',0);
       } else { $('wxFlash').setAttribute('opacity',0); $('wxBolt').setAttribute('opacity',0); }
@@ -388,7 +379,9 @@ function drawWeather(){
 
 /* ---------- 初始化 ---------- */
 place(boy); place(girl);
-applyDayNight(); setInterval(applyDayNight, 60000);
+buildKeys(KEYS_NIGHT);
+placeVinyl(VINYL_NIGHT);
+drawWeather();
 
 </script>
 </body>
