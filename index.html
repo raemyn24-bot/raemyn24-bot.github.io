@@ -74,7 +74,7 @@ function openPanel(t,h){$('panelTitle').textContent=t;$('panelBody').innerHTML=h
 $('panelClose').onclick=()=>$('panel').classList.remove('open');
 $('panel').addEventListener('click',e=>{if(e.target.id==='panel')$('panel').classList.remove('open')});
 
-const TRIS=[['piano',240,380],['record',1260,445],['desk',1630,420],['board',1810,250],['window',1110,75]];
+const TRIS=[['piano',240,380],['record',1295,445],['desk',1630,420],['board',1810,250],['window',1110,75]];
 (function(){const g=$('tris');TRIS.forEach(([id,x,y])=>{const im=el('image',{x:x-22,y:y-48,width:44,height:48,href:'assets/finger.png',class:'tri'},g);im.dataset.id=id})})();
 const bgm=$('bgm');let playing=false;
 function toggleMusic(){playing=!playing;if(playing){bgm.play().catch(()=>{});say('Rae','♪ 萨蒂《Gymnopédie No.1》')}else{bgm.pause();say('Rae','音乐停了。')}}
