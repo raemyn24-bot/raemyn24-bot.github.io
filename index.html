@@ -15,6 +15,13 @@
   #panel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#f5ecd7;border:3px solid #8a6f4d;border-radius:14px;padding:20px 24px;max-width:88vw;max-height:70vh;overflow:auto;display:none;z-index:20;box-shadow:0 8px 32px rgba(0,0,0,.5)}
   #panel h3{margin:0 0 10px;font-size:18px;color:#4a3a28}
   #panel .close{position:absolute;top:8px;right:12px;cursor:pointer;font-size:20px;color:#8a6f4d}
+
+  #welcome{position:fixed;inset:0;background:#0a0a18;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;transition:opacity .8s}
+  #welcome.hide{opacity:0;pointer-events:none}
+  #welcome h1{color:#e8d9b8;font-size:28px;margin:0 0 12px;letter-spacing:4px}
+  #welcome p{color:#8a8aa0;font-size:14px;margin:0 0 30px}
+  #enterBtn{background:#c9a86a;color:#1a1a2a;border:none;border-radius:30px;padding:14px 48px;font-size:18px;cursor:pointer;letter-spacing:2px;box-shadow:0 4px 20px rgba(201,168,106,.3)}
+  #enterBtn:active{transform:scale(.96)}
   #infobar{position:fixed;left:0;right:0;bottom:0;background:rgba(20,20,35,.85);color:#c9c9d4;font-size:12px;text-align:center;padding:8px;z-index:5}
 </style>
 </head>
@@ -26,6 +33,12 @@
   <g id="tapZones" fill="#fff" opacity="0"></g>
 </svg>
 </div>
+
+<div id="welcome">
+  <h1>🌙 Rae 的房间</h1>
+  <p>深夜的小房间，点一点四处看看</p>
+  <button id="enterBtn">进 入</button>
+</div>
 <div id="dlg"></div>
 <div id="panel"><span class="close" onclick="hidePanel()">✕</span><h3 id="panelTitle"></h3><div id="panelBody"></div></div>
 <div id="infobar">🎹钢琴听音乐 · 🎵唱片机 · 📚书桌 · 📌留言板 · 🌙窗户看天气 —— 点手指互动</div>
@@ -36,7 +49,7 @@ const NS='http://www.w3.org/2000/svg';
 function el(n,attrs,parent){const e=document.createElementNS(NS,n);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
 
 // Finger hints positioned for the GIF (1280x720)
-const FINGERS=[['piano',150,300],['record',830,330],['desk',1050,350],['board',1180,210],['window',710,40]];
+const FINGERS=[['record',830,330],['desk',1050,350],['board',1180,210],['window',710,40]];
 (function(){
   const g=$('fingers');
   FINGERS.forEach(([id,x,y])=>{
@@ -81,6 +94,12 @@ function onTap(id){
 }
 window.addMsg=function(){const v=$('gbIn').value;if(!v)return;const d=document.createElement('div');d.textContent='📝 '+v;$('gb').appendChild(d);$('gbIn').value='';};
 say('点一点房间里的东西试试',3500);
+$('enterBtn').addEventListener('click',()=>{
+  $('welcome').classList.add('hide');
+  if(!playing)toggleMusic();
+  setTimeout(()=>$('welcome').remove(),900);
+});
+
 </script>
 </body>
 </html>
