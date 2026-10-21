@@ -9,6 +9,8 @@
   #stage{position:fixed;inset:0 0 48px 0;display:flex;align-items:center;justify-content:center}
   #room{width:min(100vw,205.04vh);height:min(100vh,48.77vw);display:block;touch-action:manipulation}
   .tri{animation:triBob 1.6s ease-in-out infinite;cursor:pointer}
+  .star{animation:twinkle 2.4s ease-in-out infinite}
+  @keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
   @keyframes triBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
   #dialog{position:fixed;left:50%;transform:translateX(-50%);bottom:58px;width:min(94vw,900px);z-index:50;background:#f7efdc;border:3px solid #7a5c3e;border-radius:12px;padding:10px 16px;font-size:16px;color:#4a3826;box-shadow:0 4px 18px rgba(0,0,0,.45);cursor:pointer}
   #dialog .who{font-weight:700;color:#8a5a2b;margin-right:8px}
@@ -24,6 +26,25 @@
 <div id="stage">
 <svg id="room" viewBox="0 0 1993 972" preserveAspectRatio="xMidYMid meet">
   <image href="assets/plate-night.webp" x="0" y="0" width="1993" height="972"/>
+  <g id="stars">
+    <circle class="star" cx="964" cy="61" r="3" fill="#fff8dc" style="animation-delay:0.66s"/>
+    <circle class="star" cx="1078" cy="90" r="3" fill="#fff8dc" style="animation-delay:0.25s"/>
+    <circle class="star" cx="939" cy="206" r="2.5" fill="#fff8dc" style="animation-delay:0.08s"/>
+    <circle class="star" cx="945" cy="110" r="2" fill="#fff8dc" style="animation-delay:1.21s"/>
+    <circle class="star" cx="877" cy="198" r="2" fill="#fff8dc" style="animation-delay:1.72s"/>
+    <circle class="star" cx="1309" cy="205" r="2.5" fill="#fff8dc" style="animation-delay:1.94s"/>
+    <circle class="star" cx="856" cy="95" r="3" fill="#fff8dc" style="animation-delay:1.01s"/>
+    <circle class="star" cx="1134" cy="94" r="2" fill="#fff8dc" style="animation-delay:2.3s"/>
+    <circle class="star" cx="1194" cy="81" r="2" fill="#fff8dc" style="animation-delay:0.91s"/>
+    <circle class="star" cx="1217" cy="143" r="3" fill="#fff8dc" style="animation-delay:0.63s"/>
+    <circle class="star" cx="894" cy="172" r="3" fill="#fff8dc" style="animation-delay:0.3s"/>
+    <circle class="star" cx="1237" cy="75" r="3" fill="#fff8dc" style="animation-delay:0.7s"/>
+    <circle class="star" cx="1220" cy="202" r="2" fill="#fff8dc" style="animation-delay:1.69s"/>
+    <circle class="star" cx="896" cy="113" r="2.5" fill="#fff8dc" style="animation-delay:2.36s"/>
+    <circle class="star" cx="1088" cy="80" r="2.5" fill="#fff8dc" style="animation-delay:0.67s"/>
+    <circle class="star" cx="1223" cy="96" r="2.5" fill="#fff8dc" style="animation-delay:0.85s"/>
+    <circle class="star" cx="1123" cy="73" r="3" fill="#fff8dc" style="animation-delay:1.52s"/>
+  </g>
   
   
   
