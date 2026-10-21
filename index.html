@@ -105,10 +105,10 @@ say('点一点房间里的东西试试',3500);
 document.addEventListener('gesturestart',e=>e.preventDefault());
 document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault();},{passive:false});
 
-$('enterBtn').addEventListener('click',()=>{
-  $('welcome').classList.add('hide');
+document.getElementById('enterBtn').addEventListener('click',function(){
+  document.getElementById('welcome').classList.add('hide');
   startMusic();
-  setTimeout(()=>$('welcome').remove(),900);
+  setTimeout(function(){var w=document.getElementById('welcome');if(w)w.remove();},900);
 });
 
 </script>
