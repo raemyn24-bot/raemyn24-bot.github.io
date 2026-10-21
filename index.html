@@ -33,23 +33,16 @@
 <svg viewBox="0 0 1993 972" preserveAspectRatio="xMidYMid meet">
   <image href="assets/plate-night.webp" x="0" y="0" width="1993" height="972"/>
   <g id="stars"></g>
-  <image id="catBody" href="assets/cat.png" x="700" y="410" width="160" height="120"/>
-  <image id="catTail" href="assets/cat_tail.png" x="700" y="410" width="64" height="120"/>
   <g id="steamG"></g>
   <g id="recordSpin"></g>
   <g id="notesG"></g>
-  <g id="chars">
-    <image id="boyImg" href="assets/boy.png" x="850" y="540" width="125" height="262"/>
-    <image id="girlImg" href="assets/girl.png" x="1000" y="590" width="90" height="205"/>
-  </g>
   <g id="fingers"></g>
   <g id="tapZones" fill="#fff" opacity="0"></g>
-  <rect id="floorZone" x="0" y="520" width="1993" height="452" fill="#fff" opacity="0"/>
 </svg>
 </div>
 <div id="dlg"></div>
 <div id="panel"><span class="close" onclick="hidePanel()">✕</span><h3 id="panelTitle"></h3><div id="panelBody"></div></div>
-<div id="infobar">🎹钢琴听音乐 · 🎵唱片机 · 📚书桌 · 📌留言板 · 🌙窗户看天气 —— 点手指互动，点地板走路</div>
+<div id="infobar">🎹钢琴听音乐 · 🎵唱片机 · 📚书桌 · 📌留言板 · 🌙窗户看天气 —— 点手指互动</div>
 <audio id="bgm" loop src="assets/gymnopedie.mp3"></audio>
 <script>
 const $=id=>document.getElementById(id);
@@ -76,7 +69,7 @@ function el(n,attrs,parent){const e=document.createElementNS(NS,n);for(const k i
 (function(){
   const g=$('recordSpin');
   // A subtle rotating arc on the turntable
-  const c=el('circle',{cx:1150,cy:520,r:28,fill:'none',stroke:'#888','stroke-width':3,'stroke-dasharray':'20 140',class:'spin',id:'vinylSpin',style:'display:none'},g);
+  const c=el('circle',{cx:1250,cy:525,r:32,fill:'none',stroke:'#aaa','stroke-width':4,'stroke-dasharray':'25 175',class:'spin',id:'vinylSpin',style:'display:none'},g);
 })();
 
 // Fingers
@@ -134,39 +127,7 @@ function onTap(id){
 }
 window.addMsg=function(){const v=$('gbIn').value;if(!v)return;const d=document.createElement('div');d.textContent='📝 '+v;$('gb').appendChild(d);$('gbIn').value='';};
 
-// Walking characters - smooth, no drift, with bob animation
-const boy={el:$('boyImg'),x:912,y:671,tx:912,ty:671,moving:false,w:125,h:262};
-const girl={el:$('girlImg'),x:1045,y:692,tx:1045,ty:692,moving:false,w:90,h:205};
-const SPEED=4;
-function walkTo(c,tx,ty){
-  tx=Math.max(150,Math.min(1800,tx));ty=Math.max(560,Math.min(860,ty));
-  c.tx=tx;c.ty=ty;c.moving=true;
-}
-let phase=0;
-function tick(){
-  phase+=0.3;
-  [boy,girl].forEach(c=>{
-    if(!c.moving)return;
-    const dx=c.tx-c.x,dy=c.ty-c.y,d=Math.hypot(dx,dy);
-    if(d<6){c.moving=false;return;}
-    const s=Math.min(SPEED,d);
-    c.x+=dx/d*s;c.y+=dy/d*s;
-    const bob=Math.abs(Math.sin(phase))*7;
-    c.el.setAttribute('x',c.x-c.w/2);
-    c.el.setAttribute('y',c.y-c.h+bob);
-    if(dx<-1)c.el.setAttribute('transform','translate('+(2*c.x)+',0) scale(-1,1)');
-    else if(dx>1)c.el.removeAttribute('transform');
-  });
-  requestAnimationFrame(tick);
-}
-$('floorZone').addEventListener('click',ev=>{
-  const svg=document.querySelector('svg'),pt=svg.createSVGPoint();
-  pt.x=ev.clientX;pt.y=ev.clientY;
-  const loc=pt.matrixTransform(svg.getScreenCTM().inverse());
-  walkTo(boy,loc.x,loc.y);walkTo(girl,loc.x+100,loc.y+50);
-});
-tick();
-say('点地板，小人会走过去哦',3500);
+say('点一点房间里的东西试试',3500);
 </script>
 </body>
 </html>
