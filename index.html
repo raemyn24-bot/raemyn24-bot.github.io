@@ -1,2 +1,86 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"><title></title></head><body></body></html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Rae's Room</title>
+<style>
+  html,body{margin:0;padding:0;background:#0a0a12;overflow:hidden;height:100%;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  svg{width:100vw;height:100vh}
+  .finger{animation:fingerBob 1.6s ease-in-out infinite;cursor:pointer}
+  @keyframes fingerBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  .finger.dim{opacity:.25}
+  #dlg{position:fixed;left:50%;bottom:70px;transform:translateX(-50%);max-width:92vw;background:#f5ecd7;border:3px solid #8a6f4d;border-radius:12px;padding:10px 18px;font-size:15px;color:#4a3a28;display:none;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+  #panel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#f5ecd7;border:3px solid #8a6f4d;border-radius:14px;padding:20px 24px;max-width:88vw;max-height:70vh;overflow:auto;display:none;z-index:20;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+  #panel h3{margin:0 0 10px;font-size:18px;color:#4a3a28}
+  #panel .close{position:absolute;top:8px;right:12px;cursor:pointer;font-size:20px;color:#8a6f4d}
+  #infobar{position:fixed;left:0;right:0;bottom:0;background:rgba(20,20,35,.85);color:#c9c9d4;font-size:12px;text-align:center;padding:8px;z-index:5}
+</style>
+</head>
+<body>
+<div id="wrap">
+<svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet">
+  <image href="assets/bg.gif" x="0" y="0" width="1280" height="720"/>
+  <g id="fingers"></g>
+  <g id="tapZones" fill="#fff" opacity="0"></g>
+</svg>
+</div>
+<div id="dlg"></div>
+<div id="panel"><span class="close" onclick="hidePanel()">✕</span><h3 id="panelTitle"></h3><div id="panelBody"></div></div>
+<div id="infobar">🎹钢琴听音乐 · 🎵唱片机 · 📚书桌 · 📌留言板 · 🌙窗户看天气 —— 点手指互动</div>
+<audio id="bgm" loop src="assets/gymnopedie.mp3"></audio>
+<script>
+const $=id=>document.getElementById(id);
+const NS='http://www.w3.org/2000/svg';
+function el(n,attrs,parent){const e=document.createElementNS(NS,n);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+
+// Finger hints positioned for the GIF (1280x720)
+const FINGERS=[['piano',150,300],['record',830,330],['desk',1050,350],['board',1180,210],['window',710,40]];
+(function(){
+  const g=$('fingers');
+  FINGERS.forEach(([id,x,y])=>{
+    const im=el('image',{x:x-18,y:y-40,width:36,height:40,href:'assets/finger.png',class:'finger'},g);
+    im.dataset.id=id;
+    im.addEventListener('click',ev=>{ev.stopPropagation();onTap(id);});
+  });
+  const tz=$('tapZones');
+  const zones={piano:[60,280,180,140],record:[740,300,180,120],desk:[960,330,180,130],board:[1110,150,140,120],window:[600,10,220,100]};
+  for(const id in zones){const [x,y,w,h]=zones[id];
+    const r=el('rect',{x:x,y:y,width:w,height:h},tz);
+    r.addEventListener('click',ev=>{ev.stopPropagation();onTap(id);});
+  }
+})();
+
+let dlgTimer=null;
+function say(t,ms=2500){const d=$('dlg');d.textContent=t;d.style.display='block';clearTimeout(dlgTimer);dlgTimer=setTimeout(()=>d.style.display='none',ms);}
+function dimFingers(on){document.querySelectorAll('.finger').forEach(f=>f.classList.toggle('dim',on));}
+function showPanel(title,html){$('panelTitle').textContent=title;$('panelBody').innerHTML=html;$('panel').style.display='block';dimFingers(true);}
+function hidePanel(){$('panel').style.display='none';dimFingers(false);}
+
+let playing=false;const bgm=$('bgm');
+function toggleMusic(){
+  playing=!playing;
+  if(playing){bgm.play().catch(()=>{});say('🎹 Gymnopédie No.1');}
+  else{bgm.pause();say('音乐停了');}
+}
+function onTap(id){
+  hidePanel();
+  if(id==='piano')toggleMusic();
+  else if(id==='record')showPanel('🎵 唱片机','<p>Satie - Gymnopédie No.1</p><p style="color:#888;font-size:13px">点钢琴开始/停止播放</p>');
+  else if(id==='desk')showPanel('📚 书桌','<p style="color:#888">Rae 的联系方式（待补充）</p>');
+  else if(id==='board')showPanel('📌 留言板','<div id="gb"></div><div style="margin-top:8px"><input id="gbIn" placeholder="留句话..." style="width:65%;padding:6px"><button onclick="addMsg()" style="padding:6px 12px">贴</button></div>');
+  else if(id==='window'){
+    showPanel('🌙 杭州天气','<p>正在获取...</p>');
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=30.27&longitude=120.15&current=temperature_2m,weather_code&timezone=Asia%2FShanghai')
+      .then(r=>r.json()).then(j=>{
+        const w={0:'晴',1:'多云',2:'多云',3:'阴',45:'雾',51:'毛毛雨',61:'小雨',71:'小雪',95:'雷阵雨'}[j.current.weather_code]||'未知';
+        $('panelBody').innerHTML='<p>杭州 '+j.current.temperature_2m+'°C，'+w+'</p>';
+      }).catch(()=>{$('panelBody').innerHTML='<p>获取失败</p>';});
+  }
+}
+window.addMsg=function(){const v=$('gbIn').value;if(!v)return;const d=document.createElement('div');d.textContent='📝 '+v;$('gb').appendChild(d);$('gbIn').value='';};
+say('点一点房间里的东西试试',3500);
+</script>
+</body>
+</html>
