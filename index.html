@@ -33,7 +33,7 @@
     <rect data-id="piano" x="80" y="400" width="320" height="320"/>
     <rect data-id="record" x="1140" y="455" width="240" height="170"/>
     <rect data-id="desk" x="1440" y="440" width="380" height="300"/>
-    <rect data-id="cal" x="1428" y="185" width="94" height="158"/>
+    
     <rect data-id="board" x="1690" y="270" width="240" height="220"/>
     <rect data-id="window" x="820" y="40" width="580" height="360"/>
   </g>
@@ -53,14 +53,14 @@ function openPanel(t,h){$('panelTitle').textContent=t;$('panelBody').innerHTML=h
 $('panelClose').onclick=()=>$('panel').classList.remove('open');
 $('panel').addEventListener('click',e=>{if(e.target.id==='panel')$('panel').classList.remove('open')});
 
-const TRIS=[['piano',240,380],['record',1260,445],['desk',1630,420],['cal',1475,165],['board',1810,250],['window',1110,10]];
+const TRIS=[['piano',240,380],['record',1260,445],['desk',1630,420],['board',1810,250],['window',1110,45]];
 (function(){const g=$('tris');TRIS.forEach(([id,x,y])=>{el('polygon',{points:`${x},${y} ${x-18},${y-26} ${x+18},${y-26}`,fill:'#c9c9d4',stroke:'#6a6a78','stroke-width':3,class:'tri'},g).dataset.id=id})})();
 const bgm=$('bgm');let playing=false;
 function toggleMusic(){playing=!playing;if(playing){bgm.play().catch(()=>{});say('Rae','♪ 萨蒂《Gymnopédie No.1》')}else{bgm.pause();say('Rae','音乐停了。')}}
 let weather={temp:19,desc:'多云',hi:22,lo:15,hum:80,ok:false};
 const WMO={0:'晴',1:'晴间多云',2:'多云',3:'阴',45:'雾',48:'雾',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',80:'阵雨',81:'阵雨',82:'暴雨',95:'雷阵雨',96:'雷阵雨',99:'雷阵雨'};
 fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.1551&current=temperature_2m,relative_humidity_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FShanghai').then(r=>r.json()).then(d=>{const c=d.current.weather_code;weather={temp:Math.round(d.current.temperature_2m),desc:WMO[c]||'多云',hi:Math.round(d.daily.temperature_2m_max[0]),lo:Math.round(d.daily.temperature_2m_min[0]),hum:Math.round(d.current.relative_humidity_2m),ok:true}}).catch(()=>{});
-const PANELS={piano:['🎹 钢琴','<p>萨蒂《Gymnopédie No.1》</p><button onclick="toggleMusic()" style="padding:8px 20px;font-size:16px;">播放 / 停止</button>'],record:['🎵 唱片机','<p>正在播放：萨蒂《Gymnopédie No.1》</p><p>33⅓ RPM · 黑胶</p>'],desk:['💻 书桌','<p>Rae 的联系方式</p><p><i>（等 Rae 提供）</i></p>'],cal:['📅 日历',''],board:['📌 留言板','<div id="gbList"></div><input id="gbName" placeholder="名字" style="width:30%"><input id="gbText" placeholder="留句话吧" style="width:60%"><button onclick="addNote()">贴上</button>'],window:['🌙 窗外 · 杭州','']};
+const PANELS={piano:['🎹 钢琴','<p>萨蒂《Gymnopédie No.1》</p><button onclick="toggleMusic()" style="padding:8px 20px;font-size:16px;">播放 / 停止</button>'],record:['🎵 唱片机','<p>正在播放：萨蒂《Gymnopédie No.1》</p><p>33⅓ RPM · 黑胶</p>'],desk:['💻 书桌','<p>Rae 的联系方式</p><p><i>（等 Rae 提供）</i></p>'],board:['📌 留言板','<div id="gbList"></div><input id="gbName" placeholder="名字" style="width:30%"><input id="gbText" placeholder="留句话吧" style="width:60%"><button onclick="addNote()">贴上</button>'],window:['🌙 窗外 · 杭州','']};
 function updateCalPanel(){const d=new Date(),w='日一二三四五六'[d.getDay()];return `<p style="font-size:36px;">${d.getMonth()+1}月${d.getDate()}日</p><p>星期${w}</p>`}
 function updateWeatherPanel(){const d=new Date(),w='日一二三四五六'[d.getDay()];return `<p style="font-size:32px;">${weather.temp}°C ${weather.desc}</p><p>杭州 · ${weather.lo}°~${weather.hi}° · 湿度${weather.hum}%</p><p>${d.getMonth()+1}月${d.getDate()}日 星期${w}${weather.ok?'':'（离线）'}</p>`}
 let notes=JSON.parse(localStorage.getItem('rae_notes')||'[{"n":"屋主 Rae","t":"欢迎来到我的小房间！"}]');
@@ -73,7 +73,7 @@ function trigger(id){
   if(id==='window')h=updateWeatherPanel();
   openPanel(t,h);
   if(id==='board')renderNotes();
-  say('Rae',{record:'黑胶的味道。',desk:'我的书桌。',board:'看看留言。',window:'窗外是杭州。',cal:'今天的日子。'}[id]||'');
+  say('Rae',{record:'黑胶的味道。',desk:'我的书桌。',board:'看看留言。',window:'窗外是杭州。',}[id]||'');
 }
 document.querySelectorAll('#zones rect').forEach(z=>{z.style.cursor='pointer';z.style.pointerEvents='all';z.addEventListener('click',()=>trigger(z.dataset.id))});
 document.querySelectorAll('#tris .tri').forEach(tr=>{tr.style.pointerEvents='all';tr.addEventListener('click',()=>trigger(tr.dataset.id))});
