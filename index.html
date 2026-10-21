@@ -19,6 +19,9 @@
   .hint.dim { opacity:.15; animation:none; }
   /* 人物阴影 */
   .shadow { fill:rgba(0,0,0,.28); }
+  /* 走路颠簸 */
+  @keyframes walkBob { 0%,100% { margin-top:0; } 50% { margin-top:-6px; } }
+  .walking { animation:walkBob .36s ease-in-out infinite; }
   /* 对话条 */
   #dialog { position:fixed; left:50%; transform:translateX(-50%); bottom:max(10px, env(safe-area-inset-bottom)); width:min(94vw,900px); z-index:50;
     background:#f7efdc; border:3px solid #7a5c3e; border-radius:12px; padding:10px 16px; font-size:16px; color:#4a3826;
@@ -39,7 +42,7 @@
 <div id="stage">
 <svg id="room" viewBox="0 0 1993 972" preserveAspectRatio="xMidYMid meet">
   <defs>
-    <clipPath id="winClip"><rect x="750" y="15" width="655" height="380" rx="4"/></clipPath>
+    <clipPath id="winClip"><rect x="735" y="12" width="550" height="248" rx="4"/></clipPath>
   </defs>
 
   <!-- ===== 底板（夜/日） ===== -->
@@ -48,26 +51,34 @@
 
   <!-- ===== 天气（窗户里） ===== -->
   <g id="wx" clip-path="url(#winClip)">
-    <rect id="wxSky" x="750" y="15" width="655" height="380" fill="#101a3d"/>
+    <rect id="wxSky" x="735" y="12" width="550" height="248" fill="#101a3d"/>
     <g id="wxSunMoon"></g>
     <g id="wxClouds"></g>
     <g id="wxCity"></g>
     <g id="wxPrecip"></g>
     <polygon id="wxBolt" points="" fill="#fffbe0" opacity="0"/>
-    <rect id="wxFlash" x="750" y="15" width="655" height="380" fill="#ffffff" opacity="0"/>
+    <rect id="wxFlash" x="735" y="12" width="550" height="248" fill="#ffffff" opacity="0"/>
   </g>
 
   <!-- ===== 钢琴键（12键） ===== -->
   <g id="keys"></g>
 
   <!-- ===== 唱片 ===== -->
+  <ellipse id="vinylShadow" cx="1249" cy="502" rx="58" ry="10" fill="rgba(0,0,0,.35)"/>
   <image id="vinyl" href="assets/disc.png" x="1191" y="429" width="116" height="77"/>
 
-  <!-- ===== 日历 ===== -->
+  <!-- ===== 日历（挂墙上） ===== -->
   <g id="cal">
+    <!-- 墙上的钉子 -->
+    <circle cx="1505" cy="88" r="6" fill="#4a4a4a" stroke="#222" stroke-width="2"/>
+    <!-- 挂绳 -->
+    <line x1="1505" y1="88" x2="1478" y2="118" stroke="#8a6d4a" stroke-width="3"/>
+    <line x1="1505" y1="88" x2="1532" y2="118" stroke="#8a6d4a" stroke-width="3"/>
+    <!-- 阴影（贴墙感） -->
+    <rect x="1449" y="124" width="120" height="180" rx="8" fill="rgba(0,0,0,.25)"/>
+    <!-- 本体 -->
     <rect x="1445" y="120" width="120" height="180" rx="8" fill="#f7f1e3" stroke="#7a5c3e" stroke-width="5"/>
     <rect x="1445" y="120" width="120" height="42" fill="#c0392b"/>
-    <circle cx="1475" cy="112" r="7" fill="#5a4a3a"/><circle cx="1535" cy="112" r="7" fill="#5a4a3a"/>
     <text id="calM" x="1505" y="150" text-anchor="middle" font-size="26" font-weight="700" fill="#fff">10月</text>
     <text id="calD" x="1505" y="225" text-anchor="middle" font-size="64" font-weight="800" fill="#333">21</text>
     <text id="calW" x="1505" y="268" text-anchor="middle" font-size="24" fill="#666">星期三</text>
@@ -91,7 +102,7 @@
 
   <!-- ===== 点击区 ===== -->
   <g id="zones" fill="#fff" opacity="0">
-    <rect data-id="piano" x="58" y="258" width="374" height="442"/>
+    <rect data-id="piano" x="58" y="258" width="182" height="442"/>
     <rect data-id="shelf" x="246" y="106" width="412" height="454"/>
     <rect data-id="window" x="735" y="5" width="685" height="400"/>
     <rect data-id="record" x="1000" y="420" width="353" height="232"/>
@@ -213,15 +224,31 @@ place(boy); place(girl);
 // 女孩跟着男孩
 let girlTarget = null;
 
-/* 简易寻路：直线 + 绕开猫 */
-const CAT = { x0:1032, x1:1265, y0:720, y1:806 };
+/* 寻路：直线 + 绕开障碍物（猫、家具） */
+const OBSTACLES = [
+  { x0:1032, x1:1265, y0:720, y1:806 },  // 猫
+  { x0:30, x1:450, y0:258, y1:700 },     // 钢琴
+  { x0:240, x1:660, y0:106, y1:560 },    // 书架
+  { x0:980, x1:1353, y0:380, y1:652 },   // 唱片柜
+  { x0:1290, x1:1770, y0:420, y1:730 },  // 书桌
+];
+function segHitsRect(x0,y0,x1,y1,r){
+  // 线段是否穿过矩形（简化：检查中点和端点）
+  const inR = (x,y)=> x>r.x0-20 && x<r.x1+20 && y>r.y0-20 && y<r.y1+20;
+  // 检查线段上的多个点
+  for(let t=0; t<=1; t+=0.1){
+    if(inR(x0+(x1-x0)*t, y0+(y1-y0)*t)) return true;
+  }
+  return false;
+}
 function planPath(x0,y0,x1,y1){
   const pts = [[x0,y0]];
-  // 如果直线穿过猫，加绕行点
-  const inCat = (x,y)=> x>CAT.x0-30 && x<CAT.x1+30 && y>CAT.y0-20 && y<CAT.y1+20;
-  if(inCat((x0+x1)/2,(y0+y1)/2) || inCat(x1,y1)){
-    pts.push([(CAT.x0+CAT.x1)/2, CAT.y1+60]);
-  }
+  // 找到所有会被穿过的障碍物，加绕行点（从下方绕过）
+  OBSTACLES.forEach(r=>{
+    if(segHitsRect(x0,y0,x1,y1,r)){
+      pts.push([(r.x0+r.x1)/2, r.y1+70]);
+    }
+  });
   pts.push([x1,y1]);
   return pts;
 }
@@ -229,6 +256,7 @@ let walking = false;
 function walkTo(tx, ty, done){
   if(walking) return; walking = true;
   dimHints(true);
+  boy.el.classList.add('walking'); girl.el.classList.add('walking');
   const path = planPath(boy.x, boy.y, tx, ty);
   let si = 0;
   const speed = 260; // px/s
@@ -243,6 +271,7 @@ function walkTo(tx, ty, done){
       si++;
       if(si >= path.length){
         walking = false; dimHints(false);
+        boy.el.classList.remove('walking'); girl.el.classList.remove('walking');
         // 女孩走过去
         walkGirl();
         if(done) done();
@@ -279,14 +308,22 @@ function walkGirl(){
   requestAnimationFrame(step);
 }
 
-const KEYS_NIGHT = { x0:171, y0:453, x1:396, y1:519 };
-const KEYS_DAY = { x0:175, y0:470, x1:375, y1:500 };
+// 钢琴键：实际键床位置（带透视），x 125-375, y 495-520，左低右高
+const KEYS_NIGHT = { x0:125, y0:495, x1:375, y1:520, skew:-0.08 };
+const KEYS_DAY = { x0:125, y0:495, x1:375, y1:520, skew:-0.08 };
 const KEYS = { n:12, els:[], cur:null };
 function buildKeys(pos){
   const g = $('keys'); g.innerHTML=''; KEYS.els=[];
-  const kw = (pos.x1-pos.x0)/KEYS.n;
+  const kw = (pos.x1-pos.x0)/KEYS.n, kh = pos.y1-pos.y0;
+  // 用 matrix 做透视倾斜：左低右高
+  const skewY = pos.skew * (pos.x1-pos.x0);
   for(let i=0;i<KEYS.n;i++){
-    const r = el('rect',{ x:pos.x0+i*kw+1, y:pos.y0, width:kw-2, height:pos.y1-pos.y0, fill:'#f2ede2', stroke:'#3a3128','stroke-width':1.5 },g);
+    const x = pos.x0 + i*kw;
+    // 每个键的 y 根据 x 位置做偏移（透视）
+    const yOff = (i/KEYS.n) * skewY;
+    const r = el('rect',{ x:x+1, y:pos.y0+yOff, width:kw-2, height:kh, fill:'#f2ede2', stroke:'#3a3128','stroke-width':1.5 },g);
+    // 给每个键单独的倾斜，让整体看起来有透视
+    r.setAttribute('transform', `skewY(${(pos.skew*57.3).toFixed(1)})`);
     KEYS.els.push(r);
   }
   KEYS.cur = pos;
@@ -294,12 +331,14 @@ function buildKeys(pos){
 function pressKey(i, down){
   const r = KEYS.els[i]; if(!r || !KEYS.cur) return;
   r.setAttribute('fill', down ? '#c9a86a' : '#f2ede2');
-  r.setAttribute('y', down ? KEYS.cur.y0+4 : KEYS.cur.y0);
+  const yOff = (i/KEYS.n) * KEYS.cur.skew * (KEYS.cur.x1-KEYS.cur.x0);
+  r.setAttribute('y', down ? KEYS.cur.y0+yOff+4 : KEYS.cur.y0+yOff);
 }
 /* ---------- 唱片（日夜双坐标） ---------- */
 const VINYL_NIGHT = { x:1191, y:429, w:116, h:77 };
 const VINYL_DAY = { x:1165, y:430, w:110, h:60 };
-function placeVinyl(pos){ const v=$('vinyl'); v.setAttribute('x',pos.x); v.setAttribute('y',pos.y); v.setAttribute('width',pos.w); v.setAttribute('height',pos.h); }
+function placeVinyl(pos){ const v=$('vinyl'); v.setAttribute('x',pos.x); v.setAttribute('y',pos.y); v.setAttribute('width',pos.w); v.setAttribute('height',pos.h);
+  const s=$('vinylShadow'); s.setAttribute('cx', pos.x+pos.w/2); s.setAttribute('cy', pos.y+pos.h+4); s.setAttribute('rx', pos.w/2); }
 
 /* ---------- 提示箭头（像素风） ---------- */
 const HINTS = [ ['piano',249,384], ['shelf',458,292], ['window',1096,160], ['record',1176,437], ['desk',1574,408], ['board',1764,292] ];
@@ -326,7 +365,7 @@ fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.155
   }).catch(()=>{});
 
 /* ---------- SVG 天气（窗户里，750,15,655x380） ---------- */
-const WX = { x:750, y:15, w:655, h:380 };
+const WX = { x:735, y:12, w:550, h:248 };
 function drawWeather(){
   if(wxAnim) cancelAnimationFrame(wxAnim);
   const day = isDayNow(), kind = weather.kind;
@@ -339,10 +378,10 @@ function drawWeather(){
   else sky.setAttribute('fill', day?'#5f9de0':'#101a3d');
   // 太阳/月亮/星星
   if(kind==='clear'||kind==='cloud'){
-    if(day){ el('circle',{cx:1240,cy:80,r:34,fill:'#ffd94d'},gSun); el('circle',{cx:1240,cy:80,r:46,fill:'#ffd94d','fill-opacity':.3},gSun); }
+    if(day){ el('circle',{cx:1010,cy:60,r:28,fill:'#ffd94d'},gSun); el('circle',{cx:1010,cy:60,r:38,fill:'#ffd94d','fill-opacity':.3},gSun); }
     else {
       for(let i=0;i<50;i++) el('rect',{x:WX.x+Math.random()*WX.w, y:WX.y+Math.random()*180, width:2.5, height:2.5, fill:'#ffeec2'},gSun);
-      el('circle',{cx:1240,cy:80,r:26,fill:'#f5d76e'},gSun); el('circle',{cx:1230,cy:72,r:22,fill: day?'#5f9de0':'#101a3d'},gSun);
+      el('circle',{cx:1010,cy:60,r:22,fill:'#f5d76e'},gSun); el('circle',{cx:1002,cy:54,r:18,fill: day?'#5f9de0':'#101a3d'},gSun);
     }
   }
   // 云
@@ -356,9 +395,9 @@ function drawWeather(){
     clouds.push({e:c, x:cx, ox:cx, v:.2+Math.random()*.3});
   }
   // 城市剪影
-  const cityB = [[760,245,70,150],[845,275,55,120],[915,230,80,165],[1010,265,60,130],[1080,240,75,155],[1170,280,55,115],[1235,250,78,145],[1325,275,60,120]];
+  const cityB = [[745,150,60,86],[815,170,48,66],[870,140,70,96],[950,165,52,71],[1010,145,65,91],[1085,175,48,61],[1140,155,68,81],[1215,170,55,66]];
   cityB.forEach(b=> el('rect',{x:b[0],y:b[1],width:b[2],height:b[3],fill: day?'#5d7ba6':'#0c1330'},gCity));
-  if(!day) for(let i=0;i<70;i++) el('rect',{x:766+((i*53)%620), y:260+((i*29)%110), width:4, height:4, fill:'#ffca7a'},gCity);
+  if(!day) for(let i=0;i<50;i++) el('rect',{x:750+((i*53)%520), y:155+((i*29)%70), width:4, height:4, fill:'#ffca7a'},gCity);
   el('rect',{x:WX.x, y:WX.y+WX.h-24, width:WX.w, height:24, fill: day?'#7d94b5':'#090f24'},gCity);
   // 降水粒子
   const parts = [];
@@ -379,7 +418,7 @@ function drawWeather(){
       if(flashT<=0){ flash=14; flashT=140+Math.random()*300; }
       if(flash>0){ flash--;
         $('wxFlash').setAttribute('opacity', .5*(flash/14));
-        if(flash>8){ const lx=900+Math.random()*300;
+        if(flash>8){ const lx=850+Math.random()*250;
           $('wxBolt').setAttribute('points', `${lx},15 ${lx-32},105 ${lx+8},105 ${lx-42},215 ${lx-6},215 ${lx-48},345`);
           $('wxBolt').setAttribute('opacity',.95);
         } else $('wxBolt').setAttribute('opacity',0);
