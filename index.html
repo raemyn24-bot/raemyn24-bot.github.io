@@ -16,12 +16,12 @@
   #panel h3{margin:0 0 10px;font-size:18px;color:#4a3a28}
   #panel .close{position:absolute;top:8px;right:12px;cursor:pointer;font-size:20px;color:#8a6f4d}
 
-  #welcome{position:fixed;inset:0;background:#0a0a18;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;transition:opacity .8s}
+  #welcome{position:fixed;inset:0;background:#0a0a18 url('assets/welcome-bg.png') center/contain no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;z-index:100;transition:opacity .8s;padding-top:8vh}
   #welcome.hide{opacity:0;pointer-events:none}
-  #welcome h1{color:#e8d9b8;font-size:28px;margin:0 0 12px;letter-spacing:4px}
-  #welcome p{color:#8a8aa0;font-size:14px;margin:0 0 30px}
-  #enterBtn{background:#c9a86a;color:#1a1a2a;border:none;border-radius:30px;padding:14px 48px;font-size:18px;cursor:pointer;letter-spacing:2px;box-shadow:0 4px 20px rgba(201,168,106,.3)}
-  #enterBtn:active{transform:scale(.96)}
+  #welcome h1{color:#fff;font-size:42px;margin:0 0 8px;letter-spacing:12px;font-family:'Courier New',monospace;font-weight:900;text-shadow:3px 3px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000}
+  #welcome p{color:#c9c9d4;font-size:14px;margin:0 0 24px;letter-spacing:6px;font-family:'Courier New',monospace;text-shadow:2px 2px 0 #000}
+  #enterBtn{background:#c9a86a;color:#1a1a2a;border:3px solid #000;border-radius:0;padding:12px 44px;font-size:18px;cursor:pointer;letter-spacing:4px;font-family:'Courier New',monospace;font-weight:bold;box-shadow:4px 4px 0 #000}
+  #enterBtn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #000}
   #infobar{position:fixed;left:0;right:0;bottom:0;background:rgba(20,20,35,.85);color:#c9c9d4;font-size:12px;text-align:center;padding:8px;z-index:5}
 </style>
 </head>
@@ -35,8 +35,8 @@
 </div>
 
 <div id="welcome">
-  <h1>🌙 Rae 的房间</h1>
-  <p>深夜的小房间，点一点四处看看</p>
+  <h1>像素房间</h1>
+  <p>PIXEL ROOM</p>
   <button id="enterBtn">进 入</button>
 </div>
 <div id="dlg"></div>
