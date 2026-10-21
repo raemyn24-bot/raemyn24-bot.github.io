@@ -20,28 +20,15 @@
   #infobar{position:fixed;left:0;right:0;bottom:0;height:48px;z-index:50;background:#1a1a2e;color:#ccc;display:flex;align-items:center;justify-content:center;font-size:13px;padding:0 12px;text-align:center}
   #musicNote{animation:floatUp 2.6s ease-in-out infinite}
   @keyframes floatUp{0%,100%{transform:translateY(0);opacity:.9}50%{transform:translateY(-14px);opacity:.5}}
-        .steamP{animation:steamUp 2.2s ease-in-out infinite}
-  @keyframes steamUp{0%{transform:translateY(0);opacity:0}30%{opacity:.7}100%{transform:translateY(-26px);opacity:0}}
-</style>
+          </style>
 </head>
 <body>
 <div id="stage">
 <svg id="room" viewBox="0 0 1993 972" preserveAspectRatio="xMidYMid meet">
   <image href="assets/plate-night.webp" x="0" y="0" width="1993" height="972"/>
   
-  <g id="steamG">
-    <path class="steamP" d="M1695,556 q7,-11 0,-22 q-7,-11 0,-22" stroke="#fff" stroke-width="3.5" fill="none" opacity="0.65"/>
-    <path class="steamP" d="M1707,558 q7,-11 0,-22 q-7,-11 0,-22" stroke="#fff" stroke-width="3.5" fill="none" opacity="0.65" style="animation-delay:.7s"/>
-  </g>
-  <g id="calG">
-    <circle cx="1475" cy="188" r="6" fill="#4a4a4a"/>
-    <line x1="1475" y1="188" x2="1456" y2="213" stroke="#8a6d4a" stroke-width="4"/>
-    <line x1="1475" y1="188" x2="1494" y2="213" stroke="#8a6d4a" stroke-width="4"/>
-    <rect x="1428" y="213" width="94" height="130" rx="7" fill="#f7f1e3" stroke="#7a5c3e" stroke-width="4"/>
-    <rect x="1428" y="213" width="94" height="34" fill="#c0392b"/>
-    <text id="calM" x="1475" y="238" text-anchor="middle" font-size="20" font-weight="700" fill="#fff">10月</text>
-    <text id="calD" x="1475" y="305" text-anchor="middle" font-size="46" font-weight="800" fill="#333">21</text>
-  </g>
+  
+  
   <text id="musicNote" x="240" y="320" font-size="46" text-anchor="middle" opacity="0">🎵</text>
   <g id="tris"></g>
   <g id="zones" fill="#fff" opacity="0">
@@ -67,7 +54,7 @@ function say(w,t){document.querySelector('#dialog .who').textContent=w;document.
 function openPanel(t,h){$('panelTitle').textContent=t;$('panelBody').innerHTML=h;$('panel').classList.add('open')}
 $('panelClose').onclick=()=>$('panel').classList.remove('open');
 $('panel').addEventListener('click',e=>{if(e.target.id==='panel')$('panel').classList.remove('open')});
-(function(){const d=new Date();$('calM').textContent=(d.getMonth()+1)+'月';$('calD').textContent=d.getDate()})();
+
 const TRIS=[['piano',240,380],['record',1260,445],['desk',1630,420],['cal',1475,165],['board',1810,250],['window',1110,10]];
 (function(){const g=$('tris');TRIS.forEach(([id,x,y])=>{el('polygon',{points:`${x},${y} ${x-15},${y-22} ${x+15},${y-22}`,fill:'#3d3d4f',stroke:'#14141f','stroke-width':3,class:'tri'},g).dataset.id=id})})();
 const bgm=$('bgm');let playing=false;
