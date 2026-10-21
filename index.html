@@ -12,6 +12,8 @@
   @keyframes fingerBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
   .finger.dim{opacity:.25}
   .star{animation:twinkle 3s ease-in-out infinite}
+  #catTail{animation:tailWag 7s ease-in-out infinite}
+  @keyframes tailWag{0%,65%,100%{transform:rotate(0deg)}75%{transform:rotate(-14deg)}85%{transform:rotate(9deg)}92%{transform:rotate(-4deg)}}
   @keyframes twinkle{0%,100%{opacity:.2}50%{opacity:1}}
   .note{animation:noteFloat 2.5s ease-out forwards;opacity:0}
   @keyframes noteFloat{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(-70px);opacity:0}}
@@ -28,6 +30,8 @@
   <image href="assets/plate-night.webp" x="0" y="0" width="1993" height="972"/>
   <g id="stars"></g>
   <g id="notesG"></g>
+  <image id="catBody" href="assets/cat.png" x="700" y="410" width="160" height="120"/>
+  <image id="catTail" href="assets/cat_tail.png" x="700" y="410" width="64" height="120" style="transform-box:fill-box;transform-origin:85% 55%;animation:tailWag 7s ease-in-out infinite"/>
   <image id="boyImg" href="assets/walk/boy_f1.png" x="850" y="600" width="110" height="175"/>
   <image id="girlImg" href="assets/walk/girl_f1.png" x="1000" y="630" width="85" height="160"/>
   <g id="fingers"></g>
@@ -119,7 +123,6 @@ function walkTo(c,tx,ty){
   tx=Math.max(320,Math.min(1850,tx));
   ty=Math.max(680,Math.min(880,ty));
   // Avoid cabinet: if target inside cabinet footprint, push out
-  if(tx>1020&&tx<1380&&ty<720){ty=740;}
   c.tx=tx;c.ty=ty;c.moving=true;
 }
 const SPEED=3.2;
