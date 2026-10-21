@@ -27,8 +27,6 @@
     display:flex; align-items:center; justify-content:center; font-size:13px; padding:0 12px; text-align:center; }
   .steam { animation:steamUp 2.2s ease-in-out infinite; }
   @keyframes steamUp { 0% { transform:translateY(0); opacity:0; } 30% { opacity:.7; } 100% { transform:translateY(-28px); opacity:0; } }
-  #catTail { transform-box:fill-box; transform-origin:20% 80%; animation:tailWag 2.4s ease-in-out infinite; }
-  @keyframes tailWag { 0%,100% { transform:rotate(-8deg); } 50% { transform:rotate(12deg); } }
   #vinyl { transform-box:fill-box; transform-origin:center; }
   #vinyl.spin { animation:spin 1.8s linear infinite; }
   @keyframes spin { to { transform:rotate(360deg); } }
@@ -45,12 +43,9 @@
 
   <!-- 咖啡热气 -->
   <g id="steam" opacity="0.8">
-    <path class="steam" d="M1520,480 q6,-10 0,-20 q-6,-10 0,-20" stroke="#fff" stroke-width="3" fill="none" opacity="0.6" style="animation-delay:0s"/>
-    <path class="steam" d="M1532,482 q6,-10 0,-20 q-6,-10 0,-20" stroke="#fff" stroke-width="3" fill="none" opacity="0.6" style="animation-delay:0.7s"/>
+    <path class="steam" d="M1650,570 q6,-10 0,-20 q-6,-10 0,-20" stroke="#fff" stroke-width="3" fill="none" opacity="0.6" style="animation-delay:0s"/>
+    <path class="steam" d="M1662,572 q6,-10 0,-20 q-6,-10 0,-20" stroke="#fff" stroke-width="3" fill="none" opacity="0.6" style="animation-delay:0.7s"/>
   </g>
-
-  <!-- 猫尾巴（摇摆） -->
-  <ellipse id="catTail" cx="720" cy="750" rx="28" ry="10" fill="#6a6a7a"/>
 
   <!-- 人物 -->
   <ellipse id="girlShadow" class="shadow" cx="0" cy="0" rx="34" ry="10"/>
