@@ -8,10 +8,6 @@
   html,body { margin:0; padding:0; height:100%; background:#070b16; overflow:hidden; -webkit-user-select:none; user-select:none; }
   #stage { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
   #room { width:min(100vw,205.04vh); height:min(100vh,48.77vw); display:block; touch-action:manipulation; }
-  #room text { font-family:"PingFang SC","Microsoft YaHei",sans-serif; }
-  #vinyl { transform-box:fill-box; transform-origin:center; }
-  #vinyl.spin { animation:spin 1.8s linear infinite; }
-  @keyframes spin { to { transform:rotate(360deg); } }
   .hint { animation:hintBob 1.8s ease-in-out infinite; }
   @keyframes hintBob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
   .hint.dim { opacity:.15; animation:none; }
@@ -34,40 +30,24 @@
 <body>
 <div id="stage">
 <svg id="room" viewBox="0 0 1993 972" preserveAspectRatio="xMidYMid meet">
-  <defs>
-    <clipPath id="winClip"><rect x="710" y="20" width="620" height="310" rx="4"/></clipPath>
-  </defs>
+  <!-- 底板 -->
+  <image href="assets/plate-night.webp" x="0" y="0" width="1993" height="972"/>
 
-  <!-- 底板：只有黑夜 -->
-  <image id="plateNight" href="assets/plate-night.webp" x="0" y="0" width="1993" height="972"/>
-
-  <!-- 天气：窗户里（710,20,620x310），黑夜版 -->
-  <g id="wx" clip-path="url(#winClip)">
-    <rect id="wxSky" x="710" y="20" width="620" height="310" fill="#101a3d"/>
-    <g id="wxSunMoon"></g>
-    <g id="wxClouds"></g>
-    <g id="wxCity"></g>
-    <g id="wxPrecip"></g>
-    <polygon id="wxBolt" points="" fill="#fffbe0" opacity="0"/>
-    <rect id="wxFlash" x="710" y="20" width="620" height="310" fill="#ffffff" opacity="0"/>
-  </g>
-  <!-- 窗框：压在天气上面，像透过窗户看 -->
-  <g id="winFrame" pointer-events="none">
-    <rect x="710" y="20" width="620" height="310" fill="none" stroke="#5a3d24" stroke-width="14"/>
-    <line x1="917" y1="20" x2="917" y2="330" stroke="#5a3d24" stroke-width="10"/>
-    <line x1="1123" y1="20" x2="1123" y2="330" stroke="#5a3d24" stroke-width="10"/>
-    <line x1="710" y1="175" x2="1330" y2="175" stroke="#5a3d24" stroke-width="10"/>
-  </g>
-
-  <!-- 钢琴键已 baked，播放时只显示音符 -->
-
-  <!-- 唱片：带阴影 -->
-  <ellipse id="vinylShadow" cx="1249" cy="510" rx="58" ry="10" fill="rgba(0,0,0,.35)"/>
+  <!-- 唱片（静态） -->
   <image id="vinyl" href="assets/disc.png" x="1191" y="429" width="116" height="77"/>
 
-  <!-- 日历已 baked 进底图 -->
+  <!-- 日历（无文字） -->
+  <g id="cal">
+    <circle cx="1505" cy="88" r="6" fill="#4a4a4a"/>
+    <line x1="1505" y1="88" x2="1478" y2="118" stroke="#8a6d4a" stroke-width="3"/>
+    <line x1="1505" y1="88" x2="1532" y2="118" stroke="#8a6d4a" stroke-width="3"/>
+    <rect x="1445" y="120" width="120" height="180" rx="8" fill="#f7f1e3" stroke="#7a5c3e" stroke-width="5"/>
+    <rect x="1445" y="120" width="120" height="42" fill="#c0392b"/>
+  </g>
 
-  <!-- 猫已 baked 进底图 -->
+  <!-- 猫 -->
+  <ellipse class="shadow" cx="1148" cy="800" rx="110" ry="18"/>
+  <image id="cat" href="assets/cat-body.png" x="1032" y="700" width="233" height="106"/>
 
   <!-- 人物 -->
   <ellipse id="girlShadow" class="shadow" cx="0" cy="0" rx="34" ry="10"/>
@@ -78,10 +58,10 @@
   <!-- 音乐图标 -->
   <text id="musicNote" x="0" y="0" font-size="44" text-anchor="middle" opacity="0">🎵</text>
 
-  <!-- 提示箭头：无文字 -->
+  <!-- 提示箭头 -->
   <g id="hints"></g>
 
-  <!-- 点击区：7个，互不重叠 -->
+  <!-- 点击区 -->
   <g id="zones" fill="#fff" opacity="0">
     <rect data-id="piano" x="58" y="258" width="182" height="442"/>
     <rect data-id="shelf" x="246" y="106" width="412" height="454"/>
@@ -100,142 +80,86 @@
 
 <script>
 "use strict";
-const SVGNS = "http://www.w3.org/2000/svg";
 const $ = id => document.getElementById(id);
-const svg = $('room');
-let wxAnim = null;
-let weather = { temp:19, desc:'小雨', kind:'rain', hi:20, lo:14, hum:91, ok:false };
+const SVGNS = "http://www.w3.org/2000/svg";
 function el(tag, attrs, parent){ const e = document.createElementNS(SVGNS, tag); for(const k in attrs) e.setAttribute(k, attrs[k]); if(parent) parent.appendChild(e); return e; }
-
-function say(who, text){ $('dialog').querySelector('.who').textContent = who; $('dialogText').textContent = text; }
+function say(who, text){ document.querySelector('#dialog .who').textContent = who; document.querySelector('#dialogText').textContent = text; }
 function openPanel(title, html){ $('panelTitle').textContent = title; $('panelBody').innerHTML = html; $('panel').classList.add('open'); }
-$('panelClose').onclick = ()=>{ $('panel').classList.remove('open'); };
+$('panelClose').onclick = ()=> $('panel').classList.remove('open');
 $('panel').addEventListener('click', e=>{ if(e.target.id==='panel') $('panel').classList.remove('open'); });
 
-/* ---------- BGM ---------- */
 const bgm = $('bgm');
-let playing = false, pianoTimer = null;
+let playing = false;
 function toggleMusic(){
   playing = !playing;
-  if(playing){ bgm.play().catch(()=>{}); $('vinyl').classList.add('spin'); setMusicNote(boy.x, boy.y-190, true); startPianoAuto(); say('Rae','♪ 钢琴自己弹起来了'); }
-  else { bgm.pause(); $('vinyl').classList.remove('spin'); setMusicNote(0,0,false); stopPianoAuto(); say('Rae','音乐停了。'); }
+  if(playing){ bgm.play().catch(()=>{}); setMusicNote(boy.x, boy.y-190, true); say('Rae','♪ 钢琴自己弹起来了'); }
+  else { bgm.pause(); setMusicNote(0,0,false); say('Rae','音乐停了。'); }
 }
-function startPianoAuto(){ stopPianoAuto(); }
-function stopPianoAuto(){ if(pianoTimer){ clearInterval(pianoTimer); pianoTimer=null; } }
 
-/* ---------- 面板内容 ---------- */
 const PANELS = {
-  piano: ['🎹 钢琴', '<p>点一下钢琴，开始 / 停止播放萨蒂《Gymnopédie No.1》。</p><p>播放时琴键会自动按下，唱片也会转起来。</p><button onclick="toggleMusic()" style="padding:8px 20px;font-size:16px;">播放 / 停止</button>'],
-  shelf: ['📚 书架', '<p>这里放着 Rae 的书。</p><p><i>（等 Rae 发来书单，这里会换成真正的内容）</i></p>'],
-  window: ['🌦 窗外 · 杭州', ''],
-  desk: ['💻 书桌', '<p>Rae 的工作台。</p><p><i>（等 Rae 发来介绍和联系方式）</i></p>'],
+  piano: ['🎹 钢琴', '<p>点一下钢琴，开始 / 停止播放萨蒂《Gymnopédie No.1》。</p><button onclick="toggleMusic()" style="padding:8px 20px;font-size:16px;">播放 / 停止</button>'],
+  shelf: ['📚 书架', '<p>这里放着 Rae 的书。</p>'],
+  window: ['🌦 窗外', '<p>夜里的窗外。</p>'],
+  desk: ['💻 书桌', '<p>Rae 的工作台。</p>'],
   board: ['📌 留言板', '<div id="gbList"></div><input id="gbName" placeholder="名字" style="width:30%"><input id="gbText" placeholder="留句话吧" style="width:60%"><button onclick="addNote()">贴上</button>'],
-  record: ['🎵 唱片机', '<p>黑胶唱机。点钢琴开始播放，唱片就会转。</p>'],
+  record: ['🎵 唱片机', '<p>黑胶唱机。点钢琴开始播放。</p>'],
   cal: ['📅 日历', ''],
 };
-function updateWeatherPanel(){
-  const d = new Date(), wk = '日一二三四五六'[d.getDay()];
-  return `<p style="font-size:34px;margin:6px 0;">${weather.temp}°C <span style="font-size:18px;">杭州 · ${weather.desc}</span></p>
-    <p>今日 ${weather.lo}° ~ ${weather.hi}°C · 湿度 ${weather.hum}% · ${d.getMonth()+1}月${d.getDate()}日 星期${wk}${weather.ok?'':'（天气接口没连上，兜底数据）'}</p>
-    <p>窗外现在就是这个天气 ☁️</p>`;
-}
 function updateCalPanel(){
   const d = new Date(), wk = '日一二三四五六'[d.getDay()];
-  return `<p style="font-size:34px;margin:6px 0;">${d.getMonth()+1}月${d.getDate()}日</p><p>星期${wk}</p>`;
+  return `<p style="font-size:34px;">${d.getMonth()+1}月${d.getDate()}日</p><p>星期${wk}</p>`;
 }
-let notes = JSON.parse(localStorage.getItem('rae_notes')||'[{"n":"屋主 Rae","t":"欢迎来到我的小房间，留张便签再走吧 📌"}]');
-function renderNotes(){ const l=$('gbList'); if(!l) return; l.innerHTML = notes.map(n=>`<p><b>${n.n}:</b> ${n.t}</p>`).join(''); }
+let notes = JSON.parse(localStorage.getItem('rae_notes')||'[{"n":"屋主 Rae","t":"欢迎来到我的小房间"}]');
+function renderNotes(){ const l=$('gbList'); if(l) l.innerHTML = notes.map(n=>`<p><b>${n.n}:</b> ${n.t}</p>`).join(''); }
 function addNote(){ const n=$('gbName').value.trim()||'匿名', t=$('gbText').value.trim(); if(!t) return; notes.push({n,t}); localStorage.setItem('rae_notes',JSON.stringify(notes)); renderNotes(); $('gbText').value=''; }
 
-/* ---------- 点击触发 ---------- */
 const STAND = { piano:[300,640], shelf:[480,620], window:[965,560], record:[1176,640], desk:[1500,700], board:[1764,620], cal:[1505,650] };
 document.querySelectorAll('#zones rect').forEach(z=>{
   z.style.cursor='pointer'; z.style.pointerEvents='all';
   z.addEventListener('click', ()=>{
     const id = z.dataset.id;
-    if(id==='cal'){
-      const [tx,ty] = STAND.cal;
-      walkTo(tx, ty, ()=>{
-        let [t,h] = PANELS.cal; h = updateCalPanel();
-        openPanel(t,h); say('Rae','今天是'+new Date().getMonth()+1+'月'+new Date().getDate()+'日。');
-      });
-      return;
-    }
     const [tx,ty] = STAND[id];
     walkTo(tx, ty, ()=>{
       if(id==='piano') toggleMusic();
       else {
         let [t,h] = PANELS[id];
-        if(id==='window') h = updateWeatherPanel();
+        if(id==='cal') h = updateCalPanel();
         openPanel(t,h);
         if(id==='board') renderNotes();
-        say('Rae', {shelf:'书架上都是宝贝。', window:'窗外是杭州今天的样子。', desk:'我的书桌，有点乱。', board:'看看大家都留了什么。', record:'黑胶的味道。'}[id]||'');
       }
     });
   });
 });
-$('dialog').onclick = ()=>{ $('panel').classList.remove('open'); };
+$('dialog').onclick = ()=> $('panel').classList.remove('open');
 
-/* ---------- 人物 ---------- */
 const boy = { el:$('boy'), sh:$('boyShadow'), x:877, y:758, w:94, h:164 };
 const girl = { el:$('girl'), sh:$('girlShadow'), x:797, y:758, w:84, h:148 };
 function place(p){ p.el.setAttribute('x', p.x-p.w/2); p.el.setAttribute('y', p.y-p.h); p.sh.setAttribute('cx', p.x); p.sh.setAttribute('cy', p.y+6); }
 place(boy); place(girl);
 let girlTarget = null;
-
-const OBSTACLES = [
-  { x0:1032, x1:1265, y0:720, y1:806 },
-  { x0:30, x1:450, y0:258, y1:700 },
-  { x0:240, x1:660, y0:106, y1:560 },
-  { x0:980, x1:1353, y0:380, y1:652 },
-  { x0:1290, x1:1770, y0:420, y1:730 },
-];
-function segHitsRect(x0,y0,x1,y1,r){
-  const inR = (x,y)=> x>r.x0-20 && x<r.x1+20 && y>r.y0-20 && y<r.y1+20;
-  for(let t=0; t<=1; t+=0.1){
-    if(inR(x0+(x1-x0)*t, y0+(y1-y0)*t)) return true;
-  }
-  return false;
-}
-function planPath(x0,y0,x1,y1){
-  const pts = [[x0,y0]];
-  OBSTACLES.forEach(r=>{
-    if(segHitsRect(x0,y0,x1,y1,r)){
-      pts.push([(r.x0+r.x1)/2, r.y1+70]);
-    }
-  });
-  pts.push([x1,y1]);
-  return pts;
-}
 let walking = false;
+
 function walkTo(tx, ty, done){
   if(walking) return; walking = true;
   dimHints(true);
   boy.el.classList.add('walking'); girl.el.classList.add('walking');
-  const path = planPath(boy.x, boy.y, tx, ty);
-  let si = 0;
+  girlTarget = { x: tx-80, y: ty };
   const speed = 260;
   let last = performance.now();
-  girlTarget = { x: tx-80, y: ty };
   function step(t){
     const dt = Math.min(50, t-last)/1000; last = t;
-    const [px,py] = path[si];
-    const dx = px-boy.x, dy = py-boy.y, dist = Math.hypot(dx,dy);
+    const dx = tx-boy.x, dy = ty-boy.y, dist = Math.hypot(dx,dy);
     if(dist < 8){
-      si++;
-      if(si >= path.length){
-        walking = false; dimHints(false);
-        boy.el.classList.remove('walking'); girl.el.classList.remove('walking');
-        walkGirl();
-        if(done) done();
-        return;
-      }
-    } else {
-      boy.x += dx/dist*speed*dt; boy.y += dy/dist*speed*dt;
-      boy.el.style.transform = dx<0 ? 'scaleX(-1)' : '';
-      boy.el.style.transformBox = 'fill-box'; boy.el.style.transformOrigin = 'center';
-      place(boy);
+      walking = false; dimHints(false);
+      boy.el.classList.remove('walking'); girl.el.classList.remove('walking');
+      walkGirl();
+      if(done) done();
+      return;
     }
+    boy.x += dx/dist*speed*dt; boy.y += dy/dist*speed*dt;
+    boy.el.style.transform = dx<0 ? 'scaleX(-1)' : '';
+    boy.el.style.transformBox = 'fill-box'; boy.el.style.transformOrigin = 'center';
+    place(boy);
     requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
@@ -247,10 +171,10 @@ function walkGirl(){
   let last = performance.now();
   function step(t){
     const dt = Math.min(50, t-last)/1000; last = t;
-    const dx2 = tx-girl.x, dy2 = ty-girl.y, d2 = Math.hypot(dx2,dy2);
-    if(d2 < 10){ place(girl); return; }
-    girl.x += dx2/d2*speed*dt; girl.y += dy2/d2*speed*dt;
-    girl.el.style.transform = dx2<0 ? 'scaleX(-1)' : '';
+    const dx = tx-girl.x, dy = ty-girl.y, d = Math.hypot(dx,dy);
+    if(d < 10){ place(girl); return; }
+    girl.x += dx/d*speed*dt; girl.y += dy/d*speed*dt;
+    girl.el.style.transform = dx<0 ? 'scaleX(-1)' : '';
     girl.el.style.transformBox = 'fill-box'; girl.el.style.transformOrigin = 'center';
     place(girl);
     requestAnimationFrame(step);
@@ -258,101 +182,18 @@ function walkGirl(){
   requestAnimationFrame(step);
 }
 
-
-/* ---------- 唱片 ---------- */
-const VINYL_NIGHT = { x:1191, y:429, w:116, h:77 };
-function placeVinyl(pos){
-  const v=$('vinyl'); v.setAttribute('x',pos.x); v.setAttribute('y',pos.y); v.setAttribute('width',pos.w); v.setAttribute('height',pos.h);
-  const s=$('vinylShadow'); s.setAttribute('cx', pos.x+pos.w/2); s.setAttribute('cy', pos.y+pos.h+4); s.setAttribute('rx', pos.w/2);
-}
-
-/* ---------- 提示箭头 ---------- */
-const HINTS = [ ['piano',249,384], ['shelf',458,292], ['window',1020,120], ['record',1176,437], ['desk',1574,408], ['board',1764,292] ];
+const HINTS = [['piano',249,384],['shelf',458,292],['window',1020,120],['record',1176,437],['desk',1574,408],['board',1764,292]];
 (function(){
   const g = $('hints');
   HINTS.forEach(([id,x,y])=>{
-    const im = el('image',{ href:'assets/hint-arrow.png', x:x-36, y:y-20, width:72, height:39, class:'hint', 'data-id':id },g);
+    const im = el('image',{ href:'assets/hint-arrow.png', x:x-36, y:y-20, width:72, height:39, class:'hint' },g);
     im.style.imageRendering = 'pixelated';
   });
 })();
-function dimHints(dim){ document.querySelectorAll('#hints .hint').forEach(h=>h.classList.toggle('dim',dim)); }
+function dimHints(d){ document.querySelectorAll('#hints .hint').forEach(h=>h.classList.toggle('dim',d)); }
+function setMusicNote(x,y,s){ const n=$('musicNote'); n.setAttribute('x',x); n.setAttribute('y',y); n.setAttribute('opacity',s?1:0); }
 
-/* ---------- 音乐图标 ---------- */
-function setMusicNote(x,y,show){ const n=$('musicNote'); n.setAttribute('x',x); n.setAttribute('y',y); n.setAttribute('opacity',show?1:0); }
-
-/* ---------- 天气（黑夜版，杭州） ---------- */
-const WMO = {0:'晴',1:'晴间多云',2:'多云',3:'阴',45:'雾',48:'雾',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',80:'阵雨',81:'阵雨',82:'暴雨阵雨',85:'阵雪',86:'阵雪',95:'雷阵雨',96:'雷阵雨',99:'雷阵雨'};
-function wmoKind(c){ if([95,96,99].includes(c)) return 'storm'; if([51,53,55,61,63,65,80,81,82].includes(c)) return 'rain'; if([71,73,75,77,85,86].includes(c)) return 'snow'; if(c===0) return 'clear'; if([1,2].includes(c)) return 'cloud'; return 'overcast'; }
-fetch('https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.1551&current=temperature_2m,relative_humidity_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FShanghai')
-  .then(r=>r.json()).then(d=>{ const c = d.current.weather_code;
-    weather = { temp:Math.round(d.current.temperature_2m), desc:WMO[c]||'多云', kind:wmoKind(c),
-      hi:Math.round(d.daily.temperature_2m_max[0]), lo:Math.round(d.daily.temperature_2m_min[0]),
-      hum:Math.round(d.current.relative_humidity_2m), ok:true };
-    drawWeather();
-  }).catch(()=>{});
-
-const WX = { x:710, y:20, w:620, h:310 };
-function drawWeather(){
-  if(wxAnim) cancelAnimationFrame(wxAnim);
-  const kind = weather.kind;
-  const gSun = $('wxSunMoon'), gCl = $('wxClouds'), gCity = $('wxCity'), gPr = $('wxPrecip');
-  [gSun,gCl,gCity,gPr].forEach(g=>g.innerHTML='');
-  $('wxBolt').setAttribute('points',''); $('wxBolt').setAttribute('opacity',0);
-  const sky = $('wxSky');
-  if(kind==='overcast'||kind==='rain'||kind==='storm') sky.setAttribute('fill', '#1a2340');
-  else sky.setAttribute('fill', '#101a3d');
-  if(kind==='clear'||kind==='cloud'){
-    for(let i=0;i<40;i++) el('rect',{x:WX.x+Math.random()*WX.w, y:WX.y+Math.random()*120, width:2.5, height:2.5, fill:'#ffeec2'},gSun);
-    el('circle',{cx:1005,cy:60,r:22,fill:'#f5d76e'},gSun); el('circle',{cx:997,cy:54,r:18,fill:'#101a3d'},gSun);
-  }
-  const nCl = kind==='clear'?3 : kind==='cloud'?5 : 7;
-  const clouds = [];
-  for(let i=0;i<nCl;i++){
-    const c = el('g',{},gCl);
-    const cx = WX.x + i*(WX.w/nCl) + Math.random()*40, cy = WX.y+30+Math.random()*40, w = 80+Math.random()*60;
-    el('ellipse',{cx, cy, rx:w/2, ry:14, fill:'#4a5a85','fill-opacity':.92},c);
-    el('ellipse',{cx:cx+20, cy:cy-8, rx:w/3, ry:11, fill:'#4a5a85','fill-opacity':.92},c);
-    clouds.push({e:c, x:cx, ox:cx, v:.2+Math.random()*.3});
-  }
-  const cityB = [[740,140,55,66],[805,160,45,46],[855,135,65,71],[930,155,50,51],[985,140,60,66],[1055,165,45,41],[1110,145,62,61],[1180,160,50,46],[1235,150,40,56]];
-  cityB.forEach(b=> el('rect',{x:b[0],y:b[1],width:b[2],height:b[3],fill:'#0c1330'},gCity));
-  for(let i=0;i<40;i++) el('rect',{x:745+((i*53)%520), y:145+((i*29)%55), width:4, height:4, fill:'#ffca7a'},gCity);
-  el('rect',{x:WX.x, y:WX.y+WX.h-20, width:WX.w, height:20, fill:'#090f24'},gCity);
-  const parts = [];
-  if(kind==='rain'||kind==='storm') for(let i=0;i<90;i++) parts.push({t:'r', x:WX.x+Math.random()*WX.w, y:WX.y+Math.random()*WX.h, v:7+Math.random()*5});
-  if(kind==='snow') for(let i=0;i<60;i++) parts.push({t:'s', x:WX.x+Math.random()*WX.w, y:WX.y+Math.random()*WX.h, v:.8+Math.random(), ph:Math.random()*6.28});
-  let flashT = 0, flash = 0;
-  function frame(t){
-    clouds.forEach(c=>{ c.x += c.v; if(c.x - 80 > WX.x+WX.w) c.x = WX.x - 80; c.e.setAttribute('transform', `translate(${c.x-c.ox},0)`); });
-    gPr.innerHTML='';
-    parts.forEach(p=>{
-      if(p.t==='r'){ p.y+=p.v*2.4; p.x-=p.v*.7; if(p.y>WX.y+WX.h){p.y=WX.y;p.x=WX.x+Math.random()*WX.w;}
-        el('line',{x1:p.x,y1:p.y,x2:p.x-4,y2:p.y+16,stroke:'rgba(190,215,250,.7)','stroke-width':2},gPr); }
-      else { p.y+=p.v; p.x+=Math.sin(t/600+p.ph)*.6; if(p.y>WX.y+WX.h){p.y=WX.y;p.x=WX.x+Math.random()*WX.w;}
-        el('circle',{cx:p.x,cy:p.y,r:2.6,fill:'rgba(255,255,255,.92)'},gPr); }
-    });
-    if(kind==='storm'){
-      flashT--;
-      if(flashT<=0){ flash=14; flashT=140+Math.random()*300; }
-      if(flash>0){ flash--;
-        $('wxFlash').setAttribute('opacity', .5*(flash/14));
-        if(flash>8){ const lx=830+Math.random()*300;
-          $('wxBolt').setAttribute('points', `${lx},10 ${lx-28},90 ${lx+6},90 ${lx-36},180 ${lx-4},180 ${lx-40},230`);
-          $('wxBolt').setAttribute('opacity',.95);
-        } else $('wxBolt').setAttribute('opacity',0);
-      } else { $('wxFlash').setAttribute('opacity',0); $('wxBolt').setAttribute('opacity',0); }
-    }
-    wxAnim = requestAnimationFrame(frame);
-  }
-  wxAnim = requestAnimationFrame(frame);
-}
-
-/* ---------- 初始化 ---------- */
 place(boy); place(girl);
-
-placeVinyl(VINYL_NIGHT);
-drawWeather();
-
 </script>
 </body>
 </html>
