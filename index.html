@@ -13,12 +13,8 @@
   .finger.dim{opacity:.25}
   .star{animation:twinkle 3s ease-in-out infinite}
   @keyframes twinkle{0%,100%{opacity:.2}50%{opacity:1}}
-  .steam{animation:steamRise 3s ease-in-out infinite;opacity:0}
-  @keyframes steamRise{0%{transform:translateY(0);opacity:0}30%{opacity:.7}100%{transform:translateY(-35px);opacity:0}}
   .note{animation:noteFloat 2.5s ease-out forwards;opacity:0}
   @keyframes noteFloat{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(-70px);opacity:0}}
-  .spin{transform-box:fill-box;transform-origin:center;animation:spin 2.5s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
   #dlg{position:fixed;left:50%;bottom:70px;transform:translateX(-50%);max-width:92vw;background:#f5ecd7;border:3px solid #8a6f4d;border-radius:12px;padding:10px 18px;font-size:15px;color:#4a3a28;display:none;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,.4)}
   #panel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#f5ecd7;border:3px solid #8a6f4d;border-radius:14px;padding:20px 24px;max-width:88vw;max-height:70vh;overflow:auto;display:none;z-index:20;box-shadow:0 8px 32px rgba(0,0,0,.5)}
   #panel h3{margin:0 0 10px;font-size:18px;color:#4a3a28}
@@ -31,8 +27,6 @@
 <svg viewBox="0 0 1993 972" preserveAspectRatio="xMidYMid meet">
   <image href="assets/plate-night.webp" x="0" y="0" width="1993" height="972"/>
   <g id="stars"></g>
-  <g id="steamG"></g>
-  <g id="recordSpin"></g>
   <g id="notesG"></g>
   <image id="boyImg" href="assets/walk/boy_f1.png" x="850" y="600" width="110" height="175"/>
   <image id="girlImg" href="assets/walk/girl_f1.png" x="1000" y="630" width="85" height="160"/>
@@ -55,19 +49,6 @@ function el(n,attrs,parent){const e=document.createElementNS(NS,n);for(const k i
   [[964,61],[939,206],[1000,150],[1150,120],[1194,81],[894,172],[1220,202],[1088,80]].forEach(([x,y],i)=>{
     el('circle',{cx:x,cy:y,r:2.5,fill:'#fff8dc',class:'star',style:'animation-delay:'+(i*0.4)+'s'},g);
   });
-})();
-
-// Coffee steam above cup at (1088,540)
-(function(){const g=$('steamG');
-  for(let i=0;i<3;i++){
-    const p=el('path',{d:'M0,0 q5,-10 0,-20 q-5,-10 0,-20',stroke:'#e8e8e8','stroke-width':2.5,fill:'none','stroke-linecap':'round',class:'steam',style:'animation-delay:'+(i*1.0)+'s'},g);
-    p.setAttribute('transform','translate('+(1078+i*10)+',540)');
-  }
-})();
-
-// Record spin indicator at vinyl center (1210,525)
-(function(){const g=$('recordSpin');
-  el('circle',{cx:1210,cy:525,r:32,fill:'none',stroke:'#aaa','stroke-width':4,'stroke-dasharray':'25 175',class:'spin',id:'vinylSpin',style:'display:none'},g);
 })();
 
 // Fingers
@@ -96,8 +77,8 @@ function hidePanel(){$('panel').style.display='none';dimFingers(false);}
 let playing=false;const bgm=$('bgm');let noteTimer=null;
 function toggleMusic(){
   playing=!playing;
-  if(playing){bgm.play().catch(()=>{});$('vinylSpin').style.display='block';say('🎹 Gymnopédie No.1');startNotes();}
-  else{bgm.pause();$('vinylSpin').style.display='none';say('音乐停了');stopNotes();}
+  if(playing){bgm.play().catch(()=>{});say('🎹 Gymnopédie No.1');startNotes();}
+  else{bgm.pause();say('音乐停了');stopNotes();}
 }
 function startNotes(){stopNotes();
   noteTimer=setInterval(()=>{if(!playing)return;
@@ -111,7 +92,7 @@ function stopNotes(){clearInterval(noteTimer);noteTimer=null;}
 function onTap(id){
   hidePanel();
   if(id==='piano')toggleMusic();
-  else if(id==='record')showPanel('🎵 唱片机','<p>Satie - Gymnopédie No.1</p><p style="color:#888;font-size:13px">点钢琴开始/停止播放，唱片会转哦</p>');
+  else if(id==='record')showPanel('🎵 唱片机','<p>Satie - Gymnopédie No.1</p><p style="color:#888;font-size:13px">点钢琴开始/停止播放</p>');
   else if(id==='desk')showPanel('📚 书桌','<p style="color:#888">Rae 的联系方式（待补充）</p>');
   else if(id==='board')showPanel('📌 留言板','<div id="gb"></div><div style="margin-top:8px"><input id="gbIn" placeholder="留句话..." style="width:65%;padding:6px"><button onclick="addMsg()" style="padding:6px 12px">贴</button></div>');
   else if(id==='window'){
