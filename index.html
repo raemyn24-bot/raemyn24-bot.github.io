@@ -538,7 +538,7 @@
   var hourNote = document.getElementById("hourNote");
   var momentsBox = document.getElementById("moments");
   var currentDay = "today";
-  var selHour = NOW_HOUR;
+  var selHour = NOW_HOUR; /* -1 = nothing selected yet: no marker until the reader taps an hour */
   var userPicked = false; /* true once the reader taps an hour themselves */
 
   function fmt(n, d){ return n.toFixed(d == null ? 0 : d); }
@@ -558,8 +558,8 @@
     for (var pk = 1; pk < 24; pk++) if (d.prob[pk] > d.prob[peakH]) peakH = pk;
 
     var s = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + d.label + ' 逐小时图：上半部为温度与体感温度（左侧摄氏度刻度），下半部蓝区为降雨概率柱（右侧百分比刻度，0% 到 100%）">';
-    /* selected-hour band across both zones */
-    s += '<rect class="sel-band" x="' + (X(selHour) - plotW / 48) + '" y="' + PT + '" width="' + (plotW / 24) + '" height="' + plotH + '" rx="4"/>';
+    /* selected-hour band across both zones — only once an hour is selected */
+    if (selHour >= 0) s += '<rect class="sel-band" x="' + (X(selHour) - plotW / 48) + '" y="' + PT + '" width="' + (plotW / 24) + '" height="' + plotH + '" rx="4"/>';
     /* ---- upper zone: temperature gridlines + left ° axis ---- */
     for (var g = 0; g <= 3; g++) {
       var gt = tMin + (tMax - tMin) * g / 3;
@@ -603,8 +603,8 @@
     }
     s += '<path class="line-f" d="' + path("feel") + '"/>';
     s += '<path class="line-t" d="' + path("temp") + '"/>';
-    /* selected point value callout */
-    s += '<text class="pt-val" x="' + X(selHour) + '" y="' + (Y(d.temp[selHour]) - 11) + '" text-anchor="middle">' + fmt(d.temp[selHour], 1) + '°</text>';
+    /* selected point value callout — only once an hour is selected */
+    if (selHour >= 0) s += '<text class="pt-val" x="' + X(selHour) + '" y="' + (Y(d.temp[selHour]) - 11) + '" text-anchor="middle">' + fmt(d.temp[selHour], 1) + '°</text>';
     /* points + hit areas + x labels */
     for (var p = 0; p < 24; p++) {
       s += '<circle class="pt' + (p === selHour ? " sel" : "") + '" data-h="' + p + '" cx="' + X(p) + '" cy="' + Y(d.temp[p]) + '" r="' + (p === selHour ? 6 : 3.6) + '"/>';
@@ -654,6 +654,12 @@
 
   function updateReadout(dayKey, h){
     var d = DAYS[dayKey];
+    if (h < 0) { /* no hour picked yet: invite a tap instead of showing a default hour */
+      readout.innerHTML =
+        '<div class="cell"><div class="k">还没选时间</div><div class="v" style="font-size:16px">点图上任意一个小时，看那一小时的温度、体感和降雨概率</div></div>';
+      hourNote.innerHTML = d.note;
+      return;
+    }
     readout.innerHTML =
       '<div class="cell"><div class="k">' + (h < 10 ? "0" + h : h) + ':00 · 温度</div><div class="v num">' + fmt(d.temp[h], 1) + '°</div></div>' +
       '<div class="cell feel"><div class="k">体感温度</div><div class="v num">' + fmt(d.feel[h], 1) + '°</div></div>' +
@@ -667,7 +673,9 @@
   function setDay(key){
     currentDay = key;
     userPicked = false;
-    selHour = key === "today" ? NOW_HOUR : 17;
+    /* today opens on the current hour; tomorrow opens with NO selection —
+       its marker appears only when the reader taps an hour */
+    selHour = key === "today" ? NOW_HOUR : -1;
     btnT.setAttribute("aria-pressed", key === "today" ? "true" : "false");
     btnM.setAttribute("aria-pressed", key === "tomorrow" ? "true" : "false");
     render(key, true);
