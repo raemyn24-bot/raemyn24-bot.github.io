@@ -78,6 +78,12 @@
   .chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;
     padding:5px 11px;border-radius:999px;background:var(--card);border:1.5px solid var(--line);box-shadow:var(--shadow-sm)}
   .chip .dot{width:8px;height:8px;border-radius:50%;background:var(--mint)}
+  /* live clock dot: soft blink with a breathing halo */
+  .chip.live .dot{animation:dot-pulse 1.6s ease-in-out infinite}
+  @keyframes dot-pulse{
+    0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(18,184,134,.45)}
+    50%{opacity:.4;box-shadow:0 0 0 5px rgba(18,184,134,0)}
+  }
   .chip.aqi{background:var(--sun-soft);border-color:#f3d98b;color:#8a5c00}
   @media (prefers-color-scheme: dark){.chip.aqi{color:#ffd97a;border-color:#5c4a1c}}
   .chip.aqi .dot{background:var(--sun)}
@@ -113,7 +119,11 @@
   .ticker{margin-top:14px;background:var(--ink);color:var(--bg);border-radius:999px;overflow:hidden;
     box-shadow:var(--shadow-sm)}
   @media (prefers-color-scheme: dark){.ticker{background:#f2f5fc;color:#182238}}
-  .ticker-track{display:flex;gap:0;width:max-content;animation:scrollx 30s linear infinite;padding:8px 0}
+  .ticker-track{display:flex;gap:0;width:max-content;animation:scrollx 30s linear infinite;padding:8px 0;
+    will-change:transform;transform:translateZ(0);backface-visibility:hidden}
+  /* each half is a non-shrinking flex group so the track is exactly 2x one half:
+     translating -50% then lands pixel-perfect on the duplicate — no loop flash */
+  .ticker-half{display:flex;flex:none}
   .ticker span{font-size:13.5px;font-weight:700;white-space:nowrap;padding:0 18px}
   .ticker span i{font-style:normal;color:var(--sun)}
   @keyframes scrollx{to{transform:translateX(-50%)}}
@@ -269,7 +279,7 @@
   <div class="toprow rise d1">
     <div class="place display">浙江 杭州<small id="placeDate">10月22日 · 星期四</small></div>
     <div class="spacer"></div>
-    <span class="chip"><span class="dot"></span><span id="nowClockText">数据更新于 10:15</span></span>
+    <span class="chip live"><span class="dot"></span><span id="nowClockText">现在 --:--</span></span>
     <span class="chip aqi"><span class="dot"></span>AQI 104 · 对敏感人群不太友好</span>
   </div>
 
@@ -486,7 +496,7 @@
       placeDateEl.textContent = (n.getMonth() + 1) + "月" + n.getDate() + "日 · 星期" + WEEK_CN[n.getDay()];
     }
     if (nowClockEl) {
-      nowClockEl.textContent = "现在 " + pad2(NOW_HOUR) + ":" + pad2(NOW_MIN) + " · 数据快照 10:15";
+      nowClockEl.textContent = "现在 " + pad2(NOW_HOUR) + ":" + pad2(NOW_MIN);
     }
     var ht = document.getElementById("heroTemp");
     var hf = document.getElementById("heroFeel");
@@ -514,7 +524,7 @@
   ];
   var track = document.getElementById("ticker");
   var half = tickerItems.map(function(s){ return "<span>" + s + "</span>"; }).join("");
-  track.innerHTML = half + half;
+  track.innerHTML = '<div class="ticker-half">' + half + '</div><div class="ticker-half" aria-hidden="true">' + half + "</div>";
 
   /* ---- raindrops in alert ---- */
   var fx = document.getElementById("rainFx");
