@@ -592,7 +592,9 @@
     [0, 50, 100].forEach(function(pv){
       var ry = RY(pv);
       if (pv > 0) s += '<line class="rain-grid" x1="' + PL + '" y1="' + ry + '" x2="' + (W - PR) + '" y2="' + ry + '"/>';
-      s += '<text class="rain-lab" x="' + (W - PR + 7) + '" y="' + (ry + 4) + '">' + pv + '%</text>';
+      /* axis ticks sit well out in the right gutter (plot edge + 14) so the
+         centred bar-top % label on the last bar never touches the 0/50/100% ticks */
+      s += '<text class="rain-lab" x="' + (W - PR + 14) + '" y="' + (ry + 4) + '">' + pv + '%</text>';
     });
     s += '<line class="rain-base" x1="' + PL + '" y1="' + baseY + '" x2="' + (W - PR) + '" y2="' + baseY + '"/>';
     /* rain bars, height read against the right-hand % axis */
@@ -600,13 +602,11 @@
     for (var h = 0; h < 24; h++) {
       var bh = (d.prob[h] / 100) * barZone;
       s += '<rect class="bar' + (d.prob[h] === 0 ? " dry" : "") + (h === selHour && d.prob[h] > 0 ? " sel" : "") + '" x="' + (X(h) - bw / 2) + '" y="' + (baseY - Math.max(bh, 2)) + '" width="' + bw + '" height="' + Math.max(bh, 2) + '" rx="2.5"><title>' + h + ' 时降雨概率 ' + d.prob[h] + '%</title></rect>';
-      /* direct % labels on the bars aligned with the hour ticks, plus the daily peak.
-         The last hours sit at the plot's right edge, so a centered label would spill
-         into the right-hand % axis gutter and collide with the 0/50/100% axis labels:
-         right-align those labels so they end at the bar centre, inside the plot. */
+      /* direct % labels stay centred on the bar centre, directly above the bar —
+         separation from the right-hand % axis is handled by the axis gutter below,
+         not by nudging these labels off-centre. */
       if (d.prob[h] > 0 && (h % 3 === 0 || h === peakH)) {
-        var bAnchor = h >= 22 ? "end" : (h === 0 ? "start" : "middle");
-        s += '<text class="bar-val" x="' + X(h) + '" y="' + (baseY - bh - 5) + '" text-anchor="' + bAnchor + '">' + d.prob[h] + '%</text>';
+        s += '<text class="bar-val" x="' + X(h) + '" y="' + (baseY - bh - 5) + '" text-anchor="middle">' + d.prob[h] + '%</text>';
       }
     }
     if (d.rainMax === 0) {
