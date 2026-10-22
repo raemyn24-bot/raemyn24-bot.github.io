@@ -248,7 +248,7 @@
 
   <!-- top -->
   <div class="toprow rise d1">
-    <div class="place display">杭州<small id="placeDate">10月22日 · 星期四 · 浙江</small></div>
+    <div class="place display">浙江 杭州<small id="placeDate">10月22日 · 星期四</small></div>
     <div class="spacer"></div>
     <span class="chip"><span class="dot"></span><span id="nowClockText">数据更新于 10:15</span></span>
     <span class="chip aqi"><span class="dot"></span>AQI 104 · 对敏感人群不太友好</span>
@@ -377,10 +377,6 @@
     </ul>
   </section>
 
-  <footer>
-    数据：Open-Meteo 预报与空气质量接口 · 杭州（30.26°N, 120.14°E）· 快照时间 2026-10-22 10:15<br/>
-    日期、「现在」标记与太阳位置按你打开页面时的本地时间现算；逐小时数值仍来自上方快照。
-  </footer>
 </div>
 
 <script>
@@ -447,7 +443,7 @@
     var n = liveNow();
     NOW = n; NOW_HOUR = n.getHours(); NOW_MIN = n.getMinutes(); NOW_FRAC = NOW_HOUR + NOW_MIN / 60;
     if (placeDateEl) {
-      placeDateEl.textContent = (n.getMonth() + 1) + "月" + n.getDate() + "日 · 星期" + WEEK_CN[n.getDay()] + " · 浙江";
+      placeDateEl.textContent = (n.getMonth() + 1) + "月" + n.getDate() + "日 · 星期" + WEEK_CN[n.getDay()];
     }
     if (nowClockEl) {
       nowClockEl.textContent = "现在 " + pad2(NOW_HOUR) + ":" + pad2(NOW_MIN) + " · 数据快照 10:15";
