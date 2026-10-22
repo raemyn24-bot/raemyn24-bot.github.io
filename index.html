@@ -600,9 +600,13 @@
     for (var h = 0; h < 24; h++) {
       var bh = (d.prob[h] / 100) * barZone;
       s += '<rect class="bar' + (d.prob[h] === 0 ? " dry" : "") + (h === selHour && d.prob[h] > 0 ? " sel" : "") + '" x="' + (X(h) - bw / 2) + '" y="' + (baseY - Math.max(bh, 2)) + '" width="' + bw + '" height="' + Math.max(bh, 2) + '" rx="2.5"><title>' + h + ' 时降雨概率 ' + d.prob[h] + '%</title></rect>';
-      /* direct % labels on the bars aligned with the hour ticks, plus the daily peak */
+      /* direct % labels on the bars aligned with the hour ticks, plus the daily peak.
+         The last hours sit at the plot's right edge, so a centered label would spill
+         into the right-hand % axis gutter and collide with the 0/50/100% axis labels:
+         right-align those labels so they end at the bar centre, inside the plot. */
       if (d.prob[h] > 0 && (h % 3 === 0 || h === peakH)) {
-        s += '<text class="bar-val" x="' + X(h) + '" y="' + (baseY - bh - 5) + '" text-anchor="middle">' + d.prob[h] + '%</text>';
+        var bAnchor = h >= 22 ? "end" : (h === 0 ? "start" : "middle");
+        s += '<text class="bar-val" x="' + X(h) + '" y="' + (baseY - bh - 5) + '" text-anchor="' + bAnchor + '">' + d.prob[h] + '%</text>';
       }
     }
     if (d.rainMax === 0) {
