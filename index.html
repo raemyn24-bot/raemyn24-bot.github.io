@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="color-scheme" content="light dark" />
 <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAB/ElEQVR4nO3cwY0TMRiA0QRRSA4UxIFS2CqgFA4UxCGdhAp2fTDmz+733jVKMhp9smR7xpcLAAAAUHGdvoDTHj8vj53vX79/7Hv0afoCmCWAOAHECSBOAHECiBNA3OfdH1jNsz/6PPq00/fXCBAngDgBxAkgTgBxAogTQNz2OsBqHjq+TvDltvkD939wEa+bvj9GgDgBxAkgTgBxAogTQJwA4sb36nfnwY/ft63n/nddv96fex1kwQgQJ4A4AcQJIE4AcQKIE0Dc+DrAyvQ8f9dqnWCaESBOAHECiBNAnADiBBAngLjtOep738+fNv08gREgTgBxAogTQJwA4gQQJ4C443vV9Xn+rtPPExgB4gQQJ4A4AcQJIE4AcQKI2z4n8LQfv+5vfv7y7fZfruM1z359K0aAOAHECSBOAHECiBNAnADivBcwzHsBjBJAnADiBBAngDgBxAkg7qnPsLtc9tcJVvv1K7v7+c4J5KkJIE4AcQKIE0CcAOIEEDc+R33vzxNM7+fvMgLECSBOAHECiBNAnADiBBB3/pzA4Xnw7jrB6f386ftjBIgTQJwA4gQQJ4A4AcQJIG77nMDpeezSn/vo368sn3dwPgAnCSBOAHECiBNAnADiBBA3/l7Aaat59Mr4OsZhRoA4AcQJIE4AcQKIE0CcAAAAAAAi/gLJVmOrn8sQhwAAAABJRU5ErkJggg==" />
 <title>杭州每日天气</title>
@@ -50,7 +50,7 @@
       --shadow-sm:0 4px 14px rgba(0,0,0,.3);
     }
   }
-  *{box-sizing:border-box}
+  *{box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
   html{-webkit-text-size-adjust:100%}
   body{
     margin:0;color:var(--ink);
@@ -397,6 +397,25 @@
 <script>
 (function(){
   "use strict";
+
+  /* ---- lock the page down: no long-press copy, no right-click, no zoom ---- */
+  document.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+  /* iOS Safari pinch gestures */
+  document.addEventListener("gesturestart", function(e){ e.preventDefault(); });
+  document.addEventListener("gesturechange", function(e){ e.preventDefault(); });
+  document.addEventListener("gestureend", function(e){ e.preventDefault(); });
+  /* two-finger pinch on other touch browsers */
+  document.addEventListener("touchmove", function(e){
+    if (e.touches.length > 1) e.preventDefault();
+  }, {passive:false});
+  /* double-tap zoom: swallow a second tap that lands within 300ms */
+  var lastTouchEnd = 0;
+  document.addEventListener("touchend", function(e){
+    var t = Date.now();
+    if (t - lastTouchEnd <= 300) e.preventDefault();
+    lastTouchEnd = t;
+  }, {passive:false});
+  document.addEventListener("dblclick", function(e){ e.preventDefault(); });
 
   /* ---- baked snapshot: Open-Meteo, Hangzhou, fetched 2026-10-22 10:15 CST ---- */
   var DAYS = {
