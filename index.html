@@ -8,7 +8,7 @@
 <title>杭州每日天气</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@300;500;700&display=swap" rel="stylesheet" />
 <style>
   :root{
     --bg:#eef4ff;
@@ -208,23 +208,24 @@
   .stat.s-sun{--tint:var(--sun-soft)} .stat.s-rain{--tint:var(--rain-soft)}
   .stat.s-mint{--tint:var(--mint-soft)} .stat.s-coral{--tint:var(--coral-soft)}
 
-  /* sun daylight progress — scheme C: minimal timeline */
-  .sun-progress{margin-top:34px;padding:0 6px 10px}
-  .sp-labels{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:30px}
-  .sp-lab .k{font-size:12.5px;font-weight:900;color:var(--ink-3)}
-  .sp-lab .t{font-size:21px;font-weight:900;line-height:1.25}
-  .sp-lab-r{text-align:right}
-  .sp-stage{position:relative}
-  .sp-now{position:absolute;bottom:20px;transform:translateX(-50%);font-size:12px;font-weight:900;
-    color:#e8930c;white-space:nowrap;transition:left 1s ease}
-  @media (prefers-color-scheme: dark){.sp-now{color:#ffcf5e}}
-  .sp-track{position:relative;height:8px;border-radius:99px;background:var(--line)}
-  .sp-fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;
-    background:linear-gradient(90deg,#ffd97a,#ffb020 55%,#ff8a3d);transition:width 1s ease}
-  .sp-sun{position:absolute;top:50%;width:22px;height:22px;border-radius:50%;
+  /* sun daylight — scheme E: big-number editorial */
+  .sun-progress{margin-top:46px;padding:0 12px 8px}
+  .sp-row{display:flex;align-items:center;gap:22px}
+  .sp-big{flex:none;font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;
+    font-size:clamp(50px,12vw,92px);font-weight:300;letter-spacing:-.03em;line-height:1;color:var(--ink)}
+  .sp-rail{position:relative;flex:1;min-width:60px;height:58px}
+  .sp-line{position:absolute;left:0;right:0;top:50%;height:1px;background:var(--ink-3);opacity:.65}
+  .sp-dot{position:absolute;top:50%;left:0;width:16px;height:16px;border-radius:50%;z-index:2;
     transform:translate(-50%,-50%);
     background:radial-gradient(circle at 40% 38%,#ffe9a8,#ffb020 62%,#ff8a3d);
-    box-shadow:0 0 0 4px var(--card),0 0 18px 5px rgba(255,176,32,.65);transition:left 1s ease}
+    box-shadow:0 0 14px 4px rgba(255,176,32,.55);
+    transition:left 1.2s cubic-bezier(.4,0,.2,1)}
+  .sp-now{position:absolute;top:0;left:0;transform:translateX(-50%);z-index:3;
+    font-size:12.5px;font-weight:700;color:#e8930c;white-space:nowrap;
+    transition:left 1.2s cubic-bezier(.4,0,.2,1)}
+  @media (prefers-color-scheme: dark){.sp-now{color:#ffcf5e}}
+  .sp-caps{display:flex;justify-content:space-between;margin-top:14px;
+    font-size:12.5px;font-weight:700;letter-spacing:.3em;color:var(--ink-3)}
 
   /* ---------- checklist ---------- */
   .check-panel{margin-top:14px;background:var(--card);border:1.5px solid var(--line);border-radius:var(--r-lg);
@@ -248,6 +249,12 @@
     .panel{padding:16px 14px 12px}
     .toggle{margin-left:0}
     .alert h2{font-size:19px}
+    /* scheme E on phones: numerals stay left/right, the hairline takes its own
+       full-width row below so the dot's track never gets squeezed away */
+    .sun-progress{padding:0 2px 6px}
+    .sp-row{flex-wrap:wrap;gap:4px 14px}
+    .sp-big{font-size:clamp(46px,14vw,64px)}
+    .sp-rail{order:3;flex:1 1 100%}
   }
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
@@ -362,18 +369,17 @@
   <!-- sun path -->
   <section class="panel rise d5" aria-label="日出日落">
     <div class="panel-head"><h2 class="display">太阳的上下班时间</h2></div>
-    <div class="sun-progress" role="img" aria-label="白昼进度条：日出 06:06，日落 17:21，白昼约 11 小时 15 分；发光太阳圆点按打开页面的本地时间显示当前进度">
-      <div class="sp-labels">
-        <div class="sp-lab"><div class="k">日出</div><div class="t num">06:06</div></div>
-        <div class="sp-lab sp-lab-r"><div class="k">日落</div><div class="t num">17:21</div></div>
-      </div>
-      <div class="sp-stage">
-        <div class="sp-now num" id="spNow">现在 --:--</div>
-        <div class="sp-track">
-          <div class="sp-fill" id="spFill"></div>
-          <div class="sp-sun" id="spSun"></div>
+    <div class="sun-progress" role="img" aria-label="日出日落大数字排版：日出 06:06，日落 17:21，白昼约 11 小时 15 分；中间细线上的太阳圆点按打开页面的本地时间在日出与日落之间实时定位">
+      <div class="sp-row">
+        <div class="sp-big">06:06</div>
+        <div class="sp-rail" id="spRail">
+          <div class="sp-line"></div>
+          <div class="sp-dot" id="spDot"></div>
+          <div class="sp-now num" id="spNow">现在 --:--</div>
         </div>
+        <div class="sp-big">17:21</div>
       </div>
+      <div class="sp-caps"><span>日出</span><span>日落</span></div>
     </div>
     <p class="hour-note">白昼约 <b>11 小时 15 分</b>。17:21 天就开始擦黑，下班想去西湖边遛弯的，趁早。</p>
   </section>
@@ -671,23 +677,34 @@
 
   render("today", true);
 
-  /* ---- sun progress (scheme C): glowing dot on a sunrise→sunset timeline, positioned live ---- */
-  var spFill = document.getElementById("spFill");
-  var spSun = document.getElementById("spSun");
+  /* ---- sun position (scheme E): dot glides along the hairline between the big
+         sunrise/sunset numerals, positioned live from the viewer's local clock ---- */
+  var spDot = document.getElementById("spDot");
   var spNow = document.getElementById("spNow");
+  var spRail = document.getElementById("spRail");
   var SUNRISE = 6 + 6 / 60, SUNSET = 17 + 21 / 60; /* 06:06 → 17:21, baked snapshot */
   function paintSun(){
     var p = (NOW_FRAC - SUNRISE) / (SUNSET - SUNRISE);
     p = Math.max(0, Math.min(1, p));
-    var pct = (p * 100).toFixed(2) + "%";
-    if (spFill) spFill.style.width = pct;
-    if (spSun) spSun.style.left = pct;
+    /* the dot's centre travels only between 8px and (rail − 8px), so the whole
+       16px dot always sits inside the line's ends — never over the numerals */
+    if (spDot) spDot.style.left = "calc(8px + " + p.toFixed(4) + " * (100% - 16px))";
     if (spNow) {
-      spNow.style.left = Math.max(7, Math.min(93, p * 100)) + "%"; /* keep the label inside the card at the ends */
       spNow.textContent = "现在 " + pad2(NOW_HOUR) + ":" + pad2(NOW_MIN);
+      /* edge avoidance: shift the label's anchor in px so it never crosses the
+         rail's ends (and therefore never the card) when the dot nears an edge */
+      if (spRail) {
+        var railW = spRail.clientWidth;
+        if (railW > 0) {
+          var half = spNow.offsetWidth / 2;
+          var cx = p * railW;
+          spNow.style.left = Math.max(half, Math.min(railW - half, cx)) + "px";
+        }
+      }
     }
   }
   paintSun();
+  window.addEventListener("resize", paintSun); /* re-clamp the label after a reflow */
 
   /* ---- keep the clock-derived bits fresh while the page stays open ---- */
   var lastMin = NOW_MIN, lastHour = NOW_HOUR;
