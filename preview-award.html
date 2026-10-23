@@ -1,0 +1,829 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="color-scheme" content="light" />
+<link rel="icon" type="image/png" href="https://raemyn24-bot.github.io/sun-icon.png" />
+<link rel="apple-touch-icon" href="https://raemyn24-bot.github.io/sun-icon.png" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="杭州每日天气" />
+<meta property="og:description" content="杭州今日天气、逐小时温度与降雨概率、日出日落，一页看完。" />
+<meta property="og:image" content="https://raemyn24-bot.github.io/sun-icon.png" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="杭州每日天气" />
+<meta name="twitter:description" content="杭州今日天气、逐小时温度与降雨概率、日出日落，一页看完。" />
+<meta name="twitter:image" content="https://raemyn24-bot.github.io/sun-icon.png" />
+<title>杭州每日天气</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Noto+Serif+SC:wght@600;900&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --paper:#f5efe2;
+    --paper-2:#efe7d5;
+    --card:#fdfaf1;
+    --ink:#211d15;
+    --ink-2:#57503f;
+    --ink-3:#9a927c;
+    --line:rgba(33,29,21,.18);
+    --line-soft:rgba(33,29,21,.10);
+    --verm:#c93a26;
+    --verm-soft:#fbe9e2;
+    --amber:#e8930c;
+    --sun:#ffb020;
+    --rain:#4d7396;
+    --rain-soft:rgba(77,115,150,.12);
+    --mint:#1d8a68;
+    --shadow:0 1px 0 rgba(33,29,21,.9), 0 18px 40px -18px rgba(33,29,21,.25);
+    --r:16px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Noto Sans SC",system-ui,-apple-system,sans-serif;
+    font-size:15.5px;line-height:1.65;
+    -webkit-user-select:none;user-select:none;
+    -webkit-touch-callout:none;
+    background-image:radial-gradient(rgba(33,29,21,.055) 1px, transparent 1.1px);
+    background-size:22px 22px;
+  }
+  .num{font-family:"Fraunces","Noto Serif SC",serif;font-variant-numeric:tabular-nums lining-nums}
+  .display{font-family:"Noto Serif SC","Fraunces",serif;font-weight:900}
+  .mono{font-family:"JetBrains Mono",monospace}
+  .wrap{max-width:1060px;margin:0 auto;padding:26px 22px 34px}
+
+  /* ---------- reveal motion ---------- */
+  .rise{opacity:0;transform:translateY(20px)}
+  .rise.in{opacity:1;transform:none;transition:opacity .9s cubic-bezier(.19,.65,.22,1),transform .9s cubic-bezier(.19,.65,.22,1)}
+  .d1{transition-delay:.02s}.d2{transition-delay:.10s}.d3{transition-delay:.18s}
+  .d4{transition-delay:.26s}.d5{transition-delay:.34s}.d6{transition-delay:.42s}
+  @media (prefers-reduced-motion: reduce){
+    .rise{opacity:1;transform:none}
+    *{animation-duration:.001s !important;transition-duration:.001s !important}
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead{border-top:5px solid var(--ink);border-bottom:1px solid var(--ink);
+    padding:14px 2px 16px;position:relative}
+  .masthead::after{content:"";position:absolute;left:0;right:0;bottom:3px;border-bottom:1px solid var(--line)}
+  .kicker{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.34em;
+    text-transform:uppercase;color:var(--ink-2);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .kicker b{color:var(--verm);font-weight:700}
+  .toprow{display:flex;align-items:flex-end;gap:16px;margin-top:8px;flex-wrap:wrap}
+  .place{font-size:clamp(38px,6.4vw,58px);line-height:1.05;letter-spacing:.02em;position:relative}
+  .place small{display:block;font-family:"JetBrains Mono",monospace;font-weight:500;
+    font-size:12px;letter-spacing:.22em;color:var(--ink-2);margin-top:8px}
+  .spacer{flex:1}
+  .chip{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--ink);border-radius:999px;
+    padding:5px 13px;font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:500;background:var(--card);
+    box-shadow:2.5px 2.5px 0 rgba(33,29,21,.9);white-space:nowrap}
+  .chip .dot{width:7px;height:7px;border-radius:50%;background:var(--mint);animation:pulse 2.2s ease-in-out infinite}
+  .chip.aqi .dot{background:var(--amber)}
+  @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.55}}
+
+  /* ---------- section headers ---------- */
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin:0 0 16px}
+  .sec-head .idx{font-family:"Fraunces",serif;font-style:italic;font-weight:600;font-size:15px;color:var(--verm)}
+  .sec-head h2{margin:0;font-size:clamp(21px,3.4vw,27px);letter-spacing:.01em}
+  .sec-head .en{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.3em;
+    text-transform:uppercase;color:var(--ink-3)}
+  .sec-head .rule{flex:1;border-top:1px solid var(--line);transform:translateY(-4px)}
+  .sec-head.on-dark .en{color:rgba(245,239,226,.5)}
+  .sec-head.on-dark .rule{border-top-color:rgba(245,239,226,.25)}
+
+  /* ---------- hero ---------- */
+  .hero{padding:30px 4px 8px;position:relative}
+  .hero-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 44px;align-items:end}
+  .big-temp{display:flex;align-items:flex-start;line-height:.86}
+  .big-temp .t{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(118px,21vw,196px);letter-spacing:-.02em}
+  .big-temp .deg{font-family:"Fraunces",serif;font-weight:400;font-size:clamp(30px,5vw,46px);margin-top:clamp(14px,2.6vw,26px);color:var(--ink-2)}
+  .hero-side{padding-bottom:10px;min-width:230px}
+  .hero-side .cond{font-family:"Noto Serif SC",serif;font-weight:900;font-size:clamp(19px,2.8vw,24px);line-height:1.4;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .hero-side .feel{display:inline-block;margin-top:12px;background:var(--ink);color:var(--paper);
+    font-size:13px;font-weight:500;padding:4px 12px;border-radius:999px;letter-spacing:.02em}
+  .hero-side .hilo{margin-top:12px;font-size:14px;color:var(--ink-2)}
+  .hero-side .hilo b{color:var(--ink)}
+  .sky-art{position:absolute;top:2px;right:0;width:clamp(120px,19vw,196px);height:auto;overflow:visible}
+  #artMoon{display:none}
+  .sky-art.wx-night #artSun{display:none}
+  .sky-art.wx-night #artMoon{display:block}
+  .sky-art.wx-overcast .cloud-a ellipse,.sky-art.wx-overcast .cloud-b ellipse{fill:#c3c9cd}
+  .sky-art.wx-overcast #artSun{opacity:.45}
+  .sky-art.wx-night.wx-overcast #artMoon{opacity:.55}
+  .sky-art.wx-night.wx-overcast .cloud-a ellipse,.sky-art.wx-night.wx-overcast .cloud-b ellipse{fill:#aeb6ba}
+  .sky-art.wx-rain #artSun{display:none}
+  .sky-art.wx-rain .cloud-a ellipse{fill:#77828c}
+  .sky-art.wx-rain .cloud-b ellipse{fill:#98a3ac}
+  #artRain{display:none}
+  .sky-art.wx-rain #artRain{display:block}
+  #artRain .drop{stroke:var(--rain);stroke-width:3;stroke-linecap:round;animation:fall 1.05s linear infinite}
+  @keyframes fall{0%{transform:translateY(-3px);opacity:0}25%{opacity:1}100%{transform:translateY(7px);opacity:0}}
+  .star{fill:#f4c95d;animation:twinkle 2.6s ease-in-out infinite}
+  @keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
+  .sun-rays{transform-box:fill-box;transform-origin:center;animation:spin 46s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .verdict{font-family:"Noto Serif SC",serif;font-weight:600;font-size:clamp(18px,2.9vw,23px);
+    line-height:1.75;margin:26px 0 0;max-width:46em}
+  .verdict .hl{background:linear-gradient(transparent 62%, rgba(255,176,32,.5) 62%);padding:0 2px}
+  .outfit{margin:14px 0 0;padding:2px 0 2px 16px;border-left:3px solid var(--amber);
+    font-size:14.5px;color:var(--ink-2);max-width:52em}
+  .outfit b{color:var(--ink)}
+
+  /* ---------- ticker ---------- */
+  .ticker{margin-top:30px;background:var(--ink);color:var(--paper);overflow:hidden;
+    border-radius:10px;padding:9px 0;box-shadow:var(--shadow)}
+  .ticker-track{display:flex;width:max-content;animation:tick 36s linear infinite}
+  .ticker:hover .ticker-track{animation-play-state:paused}
+  .ticker-half{display:flex;flex:none}
+  .ticker-half span{padding:0 26px;font-size:13.5px;white-space:nowrap;display:inline-flex;gap:8px;align-items:center}
+  .ticker-half span::after{content:"✳";color:var(--amber);margin-left:26px;font-size:11px}
+  .ticker-half i{font-style:normal}
+  @keyframes tick{to{transform:translateX(-50%)}}
+
+  /* ---------- alert ---------- */
+  .alert{margin-top:22px;background:var(--verm-soft);border:1.5px solid var(--verm);border-radius:var(--r);
+    padding:22px 24px;position:relative;overflow:hidden;box-shadow:5px 5px 0 rgba(201,58,38,.28)}
+  .alert h2{margin:0 0 8px;font-size:clamp(20px,3.2vw,25px);color:#8f2312}
+  .alert p{margin:0;color:#5d2a1e;max-width:52em}
+  .alert p b{color:#8f2312}
+  .alert .big{display:inline-block;margin-top:14px;background:var(--ink);color:var(--paper);
+    padding:7px 14px;border-radius:8px;font-weight:700;font-size:14.5px}
+  .raindrops{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .raindrops i{position:absolute;top:-14px;width:2px;height:11px;border-radius:2px;
+    background:rgba(201,58,38,.35);animation:rf linear infinite}
+  @keyframes rf{to{transform:translateY(340px)}}
+
+  /* ---------- panels ---------- */
+  .panel{margin-top:22px;background:var(--card);border:1.5px solid var(--ink);border-radius:var(--r);
+    padding:24px 24px 20px;box-shadow:var(--shadow)}
+  .day-sum{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px;color:var(--ink-2);
+    padding-bottom:12px;border-bottom:1px dashed var(--line)}
+  .day-sum b{color:var(--ink)}
+  .day-sum .rain-b{color:var(--rain);font-weight:700}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 20px;font-size:12.5px;color:var(--ink-2);margin-top:12px}
+  .legend i{display:inline-block;vertical-align:middle;margin-right:7px}
+  .lg-line{width:22px;border-top:3px solid var(--ink);border-radius:2px}
+  .lg-dash{width:22px;border-top:3px dashed var(--ink-3)}
+  .lg-bar{width:14px;height:9px;background:var(--rain);border-radius:2px}
+  .axis-head{display:flex;justify-content:space-between;font-family:"JetBrains Mono",monospace;
+    font-size:10.5px;letter-spacing:.14em;color:var(--ink-3);margin-top:10px;text-transform:uppercase}
+  .toggle{display:inline-flex;border:1.5px solid var(--ink);border-radius:999px;padding:3px;background:var(--paper);gap:2px}
+  .toggle button{border:0;background:transparent;font:inherit;font-weight:700;font-size:14px;
+    padding:5px 20px;border-radius:999px;cursor:pointer;color:var(--ink-2);
+    transition:background .35s cubic-bezier(.2,.7,.2,1),color .35s,transform .12s}
+  .toggle button:active{transform:scale(.94)}
+  .toggle button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .panel-head .sec-head{margin:0;flex:1}
+
+  /* chart svg */
+  .chart-box{margin-top:6px}
+  .chart{width:100%;height:auto;display:block}
+  .chart text{font-family:"JetBrains Mono",monospace;font-size:10.5px;fill:var(--ink-2)}
+  .chart .grid{stroke:var(--line-soft);stroke-width:1;stroke-dasharray:3 4}
+  .chart .axis-lab{fill:var(--ink-3)}
+  .chart .rain-zone{fill:var(--rain-soft)}
+  .chart .zone-tag{fill:var(--rain);font-weight:700;letter-spacing:.18em}
+  .chart .rain-grid{stroke:rgba(77,115,150,.25);stroke-width:1;stroke-dasharray:3 4}
+  .chart .rain-lab{fill:var(--ink-3)}
+  .chart .rain-base{stroke:var(--line);stroke-width:1}
+  .chart .bar{fill:var(--rain)}
+  .chart .bar.dry{fill:rgba(33,29,21,.14)}
+  .chart .bar.sel{fill:var(--verm)}
+  .chart .bar-val{fill:var(--rain);font-weight:700}
+  .chart .sel-band{fill:rgba(232,147,12,.10)}
+  .chart .now-line{stroke:var(--amber);stroke-width:1.6;stroke-dasharray:4 3}
+  .chart .line-t{fill:none;stroke:var(--ink);stroke-width:2.6;stroke-linejoin:round;stroke-linecap:round}
+  .chart .line-f{fill:none;stroke:var(--ink-3);stroke-width:1.8;stroke-dasharray:5 4;stroke-linejoin:round}
+  .chart .pt{fill:var(--card);stroke:var(--ink);stroke-width:2;cursor:pointer;transition:r .15s}
+  .chart .pt.sel{fill:var(--verm);stroke:var(--verm)}
+  .chart .pt-val{font-family:"Fraunces",serif;font-size:15px;font-weight:700;fill:var(--verm)}
+  .chart .hit{fill:transparent;cursor:pointer}
+  .chart .dry-note{fill:var(--ink-3);font-size:12px}
+  .chart-box.draw .chart{animation:chartIn .8s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes chartIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .chart-box.draw .bar{transform-box:fill-box;transform-origin:50% 100%;animation:barGrow .9s cubic-bezier(.2,.75,.25,1) both}
+  @keyframes barGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+
+  .readout{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .readout .cell{padding:12px 16px;background:var(--paper)}
+  .readout .cell + .cell{border-left:1px solid var(--line)}
+  .readout .k{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.18em;color:var(--ink-3);text-transform:uppercase}
+  .readout .v{font-size:27px;font-weight:600;line-height:1.25}
+  .readout .v small{font-size:13px;color:var(--ink-2)}
+  .readout .cell.rain .v{color:var(--rain)}
+  .readout .cell.feel .v{color:var(--ink-2)}
+  .hour-note{margin:14px 0 0;font-size:14px;color:var(--ink-2);max-width:56em}
+  .hour-note b{color:var(--ink)}
+  .moments{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px}
+  .moment{border-top:2.5px solid var(--ink);padding-top:10px}
+  .moment .mt{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.14em;color:var(--ink-3)}
+  .moment .mv{font-family:"Fraunces","Noto Serif SC",serif;font-weight:700;font-size:17.5px;margin-top:3px}
+  .moment .md{font-size:13px;color:var(--ink-2);margin-top:3px;line-height:1.55}
+
+  /* ---------- stats ---------- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:22px}
+  .stat{background:var(--card);border:1.5px solid var(--ink);border-radius:var(--r);padding:16px 18px 14px;
+    box-shadow:4px 4px 0 rgba(33,29,21,.85);transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s}
+  .stat:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 rgba(33,29,21,.85)}
+  .stat .k{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.24em;color:var(--ink-3);text-transform:uppercase}
+  .stat .v{font-size:38px;font-weight:600;line-height:1.15;margin-top:4px}
+  .stat .v small{font-size:14px;color:var(--ink-2);margin-left:3px}
+  .stat .d{font-size:13px;color:var(--ink-2);margin-top:5px;line-height:1.55}
+  .stat.s-sun{border-top:5px solid var(--amber)}
+  .stat.s-mint{border-top:5px solid var(--mint)}
+  .stat.s-rain{border-top:5px solid var(--rain)}
+  .stat.s-coral{border-top:5px solid var(--verm)}
+
+  /* ---------- sun path (dark block) ---------- */
+  .panel.dark{background:var(--ink);color:var(--paper);border-color:var(--ink);
+    box-shadow:0 24px 50px -20px rgba(33,29,21,.55)}
+  .panel.dark .sec-head h2{color:var(--paper)}
+  .sun-progress{padding:16px 4px 4px}
+  .sp-row{display:flex;align-items:center;gap:20px}
+  .sp-big{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(52px,10.5vw,92px);line-height:1;letter-spacing:-.01em}
+  .sp-rail{flex:1;position:relative;height:64px}
+  .sp-line{position:absolute;left:0;right:0;top:50%;border-top:1.5px solid rgba(245,239,226,.35)}
+  .sp-rail::before,.sp-rail::after{content:"";position:absolute;top:50%;width:7px;height:7px;border-radius:50%;
+    background:var(--paper);transform:translate(-50%,-50%)}
+  .sp-rail::before{left:0}.sp-rail::after{right:0;transform:translate(50%,-50%)}
+  .sp-dot{position:absolute;top:50%;width:17px;height:17px;border-radius:50%;background:var(--sun);
+    transform:translate(-50%,-50%);box-shadow:0 0 0 5px rgba(255,176,32,.22),0 0 22px 6px rgba(255,176,32,.45);
+    transition:left 1.2s cubic-bezier(.3,.7,.2,1)}
+  .sp-now{position:absolute;top:calc(50% + 18px);transform:translateX(-50%);
+    font-family:"JetBrains Mono",monospace;font-size:11.5px;font-weight:700;color:var(--sun);white-space:nowrap;letter-spacing:.06em}
+  .sp-caps{display:flex;justify-content:space-between;font-family:"JetBrains Mono",monospace;
+    font-size:10.5px;letter-spacing:.3em;color:rgba(245,239,226,.55);text-transform:uppercase;margin-top:2px}
+  .panel.dark .hour-note{color:rgba(245,239,226,.72)}
+  .panel.dark .hour-note b{color:var(--paper)}
+
+  /* ---------- checklist ---------- */
+  .check-panel{margin-top:22px;background:var(--card);border:1.5px solid var(--ink);border-radius:var(--r);
+    padding:24px;box-shadow:var(--shadow);position:relative}
+  .check-panel .sub{font-size:13.5px;color:var(--ink-2);margin:-8px 0 8px}
+  .pack{list-style:none;margin:6px 0 0;padding:0}
+  .pack li{display:flex;gap:13px;align-items:flex-start;padding:11px 2px;border-bottom:1px dashed var(--line);font-size:14.5px}
+  .pack li:last-child{border-bottom:0}
+  .pack .tick{flex:none;width:22px;height:22px;border-radius:7px;background:var(--ink);color:var(--paper);
+    font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .pack .tick.warn{background:var(--verm)}
+  .pack b{font-weight:700}
+
+  /* ---------- pixel corner + signoff ---------- */
+  .panel.pixel{background:transparent;border:1.5px dashed var(--ink-3);box-shadow:none}
+  .panel.pixel h2{font-family:"ZCOOL KuaiLe","Noto Sans SC",sans-serif;font-weight:400;letter-spacing:.04em}
+  .signoff{margin-top:30px;text-align:center;color:var(--ink-2)}
+  .signoff .line{font-family:"Noto Serif SC",serif;font-weight:600;font-size:15px;letter-spacing:.14em}
+  .signoff .micro{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.32em;
+    text-transform:uppercase;color:var(--ink-3);margin-top:7px}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:760px){
+    .wrap{padding:18px 14px 26px}
+    .hero-grid{grid-template-columns:1fr;gap:2px}
+    .hero-side{padding-bottom:0}
+    .sky-art{top:-8px;width:118px}
+    .stats{grid-template-columns:1fr 1fr}
+    .moments{grid-template-columns:1fr 1fr}
+    .readout{grid-template-columns:1fr 1fr}
+    .readout .cell:nth-child(3){border-left:0}
+    .readout .cell{border-top:1px solid var(--line)}
+    .readout .cell:nth-child(-n+2){border-top:0}
+    .panel,.check-panel{padding:19px 16px 16px}
+    .sp-row{gap:12px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- masthead -->
+  <header class="masthead rise d1">
+    <div class="kicker"><span>Hangzhou Daily Weather</span><span>每日氣象 · <b>晚間版</b></span><span>Est. 2026</span></div>
+    <div class="toprow">
+      <div class="place display">浙江 杭州<piix-pal pal="bitbug"></piix-pal><small id="placeDate">10月23日 · 星期五</small></div>
+      <div class="spacer"></div>
+      <span class="chip live"><span class="dot"></span><span id="nowClockText">现在 --:--</span></span>
+      <span class="chip aqi"><span class="dot"></span>AQI 86 · 空气中等，正常活动无妨</span>
+    </div>
+  </header>
+
+  <!-- hero -->
+  <section class="hero rise d2" aria-label="当前天气">
+    <svg class="sky-art" id="skyArt" viewBox="0 0 200 150" aria-hidden="true">
+      <mask id="moonCut"><rect width="200" height="150" fill="#fff"/><circle cx="149" cy="43" r="21" fill="#000"/></mask>
+      <g id="artSun">
+        <g class="sun-rays" stroke="#ffb020" stroke-width="5" stroke-linecap="round">
+          <line x1="130" y1="8" x2="130" y2="20"/><line x1="130" y1="84" x2="130" y2="96"/>
+          <line x1="86" y1="52" x2="98" y2="52"/><line x1="162" y1="52" x2="174" y2="52"/>
+          <line x1="99" y1="21" x2="107" y2="29"/><line x1="153" y1="75" x2="161" y2="83"/>
+          <line x1="161" y1="21" x2="153" y2="29"/><line x1="107" y1="75" x2="99" y2="83"/>
+        </g>
+        <circle cx="130" cy="52" r="24" fill="#ffb020"/>
+        <circle cx="122" cy="48" r="3.2" fill="#8a5c00"/><circle cx="138" cy="48" r="3.2" fill="#8a5c00"/>
+        <path d="M118 60 q12 8 24 0" stroke="#8a5c00" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+      <g id="artMoon">
+        <circle cx="134" cy="54" r="24" fill="#f4c95d" mask="url(#moonCut)"/>
+        <circle class="star" cx="86" cy="24" r="2.4"/>
+        <circle class="star" cx="170" cy="14" r="2" style="animation-delay:.7s"/>
+        <circle class="star" cx="102" cy="50" r="1.8" style="animation-delay:1.3s"/>
+      </g>
+      <g class="cloud-a" fill="#dbe9ff">
+        <ellipse cx="52" cy="106" rx="30" ry="13"/><ellipse cx="72" cy="96" rx="20" ry="12"/>
+      </g>
+      <g class="cloud-b" fill="#eaf2ff">
+        <ellipse cx="150" cy="122" rx="26" ry="11"/><ellipse cx="134" cy="113" rx="16" ry="10"/>
+      </g>
+      <g id="artRain">
+        <line class="drop" x1="40" y1="117" x2="37" y2="126"/>
+        <line class="drop" x1="62" y1="120" x2="59" y2="129" style="animation-delay:.28s"/>
+        <line class="drop" x1="84" y1="115" x2="81" y2="124" style="animation-delay:.55s"/>
+        <line class="drop" x1="136" y1="128" x2="133" y2="137" style="animation-delay:.15s"/>
+        <line class="drop" x1="162" y1="130" x2="159" y2="139" style="animation-delay:.42s"/>
+      </g>
+    </svg>
+    <div class="hero-grid">
+      <div class="big-temp"><span class="t num" id="heroTemp">19</span><span class="deg">°C</span></div>
+      <div class="hero-side">
+        <div class="cond">上午放晴，中午一场急雨，入夜再续摊</div>
+        <span class="feel" id="heroFeel">体感 19° · 跟温度计一个数</span>
+        <div class="hilo">今日 <b class="num">15° – 22°</b> · 北风 <span class="num" id="heroWind">9 km/h</span> · 湿度 <span class="num" id="heroHum">72%</span></div>
+      </div>
+    </div>
+    <p class="verdict">今天的主角是中午 13 点那场急雨：<span class="hl">一小时灌下 9.6&nbsp;mm</span>，来得猛、走得也快；入夜雨再返场，23 点降雨概率冲到 94%——伞别急着收，它今晚还要加班。</p>
+    <p class="outfit">穿衣账本：早晨 15° 微凉，<b>薄外套 + 长袖</b>正好；中午冲到 22° 是全天最暖的窗口。雨一下体感就发凉，外套别急着脱——今天的穿搭重点不在衣服，在伞。</p>
+  </section>
+
+  <!-- ticker -->
+  <div class="ticker rise d3" aria-hidden="true">
+    <div class="ticker-track" id="ticker"></div>
+  </div>
+
+  <!-- tomorrow alert -->
+  <section class="alert rise d3" aria-label="明日天气提醒">
+    <div class="raindrops" id="rainFx"></div>
+    <div class="sec-head"><span class="idx">!</span><h2 class="display">明天周六：雨全下在上午</h2><span class="rule"></span><span class="en">Tomorrow</span></div>
+    <p>凌晨到中午降雨概率 <b>100%</b>，全天约 <b>9.6&nbsp;mm</b>，大半都赶在午前下完；下午开始收尾，傍晚概率掉到三四成，天光会重新露脸。</p>
+    <span class="big">行动指南：户外计划别取消，整建制挪到下午</span>
+  </section>
+
+  <!-- hourly -->
+  <section class="panel rise d4" aria-label="逐小时预报">
+    <div class="panel-head">
+      <div class="sec-head"><span class="idx">01</span><h2 class="display">逐小时</h2><span class="en">Hourly · Temp × Feel × Rain</span><span class="rule"></span></div>
+      <div class="toggle" role="group" aria-label="切换日期">
+        <button id="btnToday" aria-pressed="true">今天</button>
+        <button id="btnTomorrow" aria-pressed="false">明天</button>
+      </div>
+    </div>
+    <div class="day-sum" id="daySum" style="margin-top:14px"></div>
+    <div class="legend">
+      <span><i class="lg-line"></i>实际温度（读上图 · 左侧 ° 刻度）</span>
+      <span><i class="lg-dash"></i>体感温度（皮肤说的算）</span>
+      <span><i class="lg-bar"></i>降雨概率（读下图蓝区 · 右侧 % 刻度）</span>
+    </div>
+    <div class="axis-head" aria-hidden="true">
+      <span class="ah-l">↑ 上图：温度 °C</span>
+      <span class="ah-r">下图：降雨概率 % ↓</span>
+    </div>
+    <piix-pal pal="pip" on=".toggle button"></piix-pal>
+    <div class="chart-box" id="chartBox"></div>
+    <div class="readout" id="readout"></div>
+    <p class="hour-note" id="hourNote"></p>
+    <div class="moments" id="moments"></div>
+  </section>
+
+  <!-- stats -->
+  <div class="stats rise d5">
+    <div class="stat s-sun">
+      <div class="k">Ultraviolet · 紫外线</div>
+      <div class="v num">4.8 <small>中等</small></div>
+      <div class="d">上午晴时段攒的数，中午雨一落就清零。防晒今天只用上半天班。</div>
+    </div>
+    <div class="stat s-mint">
+      <div class="k">Air Quality · 空气质量</div>
+      <div class="v num">86 <small>US AQI</small></div>
+      <div class="d">PM2.5 约 24 µg/m³。空气中等，正常出门活动没问题。</div>
+    </div>
+    <div class="stat s-rain">
+      <div class="k">Humidity · 湿度</div>
+      <div class="v num">96<small>%</small></div>
+      <div class="d">入夜直奔饱和——衣服晾不干，鞋也别想干，除湿机可以上岗了。</div>
+    </div>
+    <div class="stat s-coral">
+      <div class="k">Pressure · 气压</div>
+      <div class="v num">1012 <small>hPa</small></div>
+      <div class="d">从清晨 1019 一路滑到 1012，靠山撤了——这就是中午那场急雨的来历。</div>
+    </div>
+  </div>
+
+  <!-- sun path -->
+  <section class="panel dark rise d5" aria-label="日出日落">
+    <div class="sec-head on-dark"><span class="idx">02</span><h2 class="display">太阳的上下班时间<piix-pal pal="sunpal"></piix-pal></h2><span class="en">Sun Path</span><span class="rule"></span></div>
+    <div class="sun-progress" role="img" aria-label="日出日落大数字排版：日出 06:06，日落 17:20，白昼约 11 小时 14 分；中间细线上的太阳圆点按打开页面的本地时间在日出与日落之间实时定位">
+      <div class="sp-row">
+        <div class="sp-big">06:06</div>
+        <div class="sp-rail" id="spRail">
+          <div class="sp-line"></div>
+          <div class="sp-dot" id="spDot"></div>
+          <div class="sp-now num" id="spNow">现在 --:--</div>
+        </div>
+        <div class="sp-big">17:20</div>
+      </div>
+      <div class="sp-caps"><span>Sunrise · 日出</span><span>Sunset · 日落</span></div>
+    </div>
+    <p class="hour-note">白昼约 <b>11 小时 14 分</b>。这个点太阳早已下班，圆点正贴着一天的终点——今晚雨还在下，西湖夜游改天吧。</p>
+  </section>
+
+  <!-- checklist -->
+  <piix-pal pal="lurk" on=".check-panel" at=".82"></piix-pal>
+  <section class="check-panel rise d6" aria-label="出门清单">
+    <div class="sec-head"><span class="idx">03</span><h2 class="display">出门前默念一遍</h2><span class="en">Checklist</span><span class="rule"></span></div>
+    <p class="sub">按今天夜里 + 明天上午的天气排的，照着收包，少挨一次淋。</p>
+    <ul class="pack">
+      <li><span class="tick warn">!</span><span><b>伞今晚别收</b>——23 点降雨概率 94%，夜里还要下最后一波。</span></li>
+      <li><span class="tick warn">!</span><span><b>明早的户外计划挪到下午</b>——周六上午概率 100%，下午就收尾了。</span></li>
+      <li><span class="tick">✓</span><span><b>窗户关严</b>——明天凌晨雨带风，风速能到 15 km/h 以上。</span></li>
+      <li><span class="tick">✓</span><span><b>薄外套留着</b>——明早 18° 加上下雨，体感比数字更凉。</span></li>
+      <li><span class="tick">✓</span><span><b>鞋子穿防水的</b>——上午的雨量够把布鞋泡透，没有侥幸窗口。</span></li>
+      <li><span class="tick">✓</span><span><b>衣服等周日再洗</b>——周六湿度 90%+ 晾不干，周日转干爽再动手。</span></li>
+    </ul>
+  </section>
+
+  <!-- pixel corner -->
+  <section class="panel pixel rise d6" aria-label="像素角落">
+    <div class="sec-head"><span class="idx">04</span><h2>像素角落 · 路过打个招呼</h2><span class="en">Pixel Corner</span><span class="rule"></span></div>
+    <piix-pal pal="boing" scale="4"></piix-pal>
+    <piix-crowd mode="crowd" count="36" height="170"></piix-crowd>
+  </section>
+
+  <div class="signoff rise d6">
+    <div class="line">— 今日到此，明日再会 —</div>
+    <div class="micro">Hangzhou Daily Weather · Fin</div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---- lock the page down: no long-press copy, no right-click, no zoom ---- */
+  document.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+  document.addEventListener("gesturestart", function(e){ e.preventDefault(); });
+  document.addEventListener("gesturechange", function(e){ e.preventDefault(); });
+  document.addEventListener("gestureend", function(e){ e.preventDefault(); });
+  document.addEventListener("touchmove", function(e){
+    if (e.touches.length > 1) e.preventDefault();
+  }, {passive:false});
+  var lastTouchEnd = 0;
+  document.addEventListener("touchend", function(e){
+    var t = Date.now();
+    if (t - lastTouchEnd <= 300) e.preventDefault();
+    lastTouchEnd = t;
+  }, {passive:false});
+  document.addEventListener("dblclick", function(e){ e.preventDefault(); });
+
+  /* ---- reveal on scroll ---- */
+  var riseEls = document.querySelectorAll(".rise");
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); }
+      });
+    }, {threshold: 0.08});
+    riseEls.forEach(function(el){ io.observe(el); });
+    setTimeout(function(){ riseEls.forEach(function(el){ el.classList.add("in"); }); }, 1600);
+  } else {
+    riseEls.forEach(function(el){ el.classList.add("in"); });
+  }
+
+  /* ---- baked snapshot: Open-Meteo, Hangzhou, fetched 2026-10-23 22:40 CST ---- */
+  var DAYS = {
+    today: {
+      label: "今天 · 10月23日 周五",
+      hi: 21.8, lo: 15.3, uv: 4.8, rainSum: 16.8, rainMax: 94,
+      temp:     [16.3,16.2,16.0,15.6,15.5,15.5,15.4,15.7,17.5,19.2,20.6,21.4,20.9,20.3,20.7,19.3,19.0,18.8,18.6,18.5,18.3,18.8,18.6,18.3],
+      feel:     [15.3,15.4,15.3,15.1,15.2,15.3,14.9,15.4,17.4,19.0,20.2,21.0,21.7,21.3,21.3,20.4,19.7,19.7,19.5,19.3,19.5,19.9,19.1,18.9],
+      prob:     [0,0,0,0,0,0,0,0,0,9,21,35,53,72,84,85,80,73,63,52,49,60,79,94],
+      rainMm:   [0,0,0,0,0,0,0,0,0,0,0,0,3.2,9.6,0.6,0.9,0.2,0.1,0.1,0,0,0,0.7,1.4],
+      hum:      [75,76,78,80,82,83,84,83,77,72,67,65,76,82,77,87,88,88,89,90,91,91,93,96],
+      wind:     [10.3,9.4,9.1,8.0,7.0,6.6,9.0,8.4,8.0,9.5,12.1,12.9,11.0,10.1,10.9,10.2,11.2,10.3,9.2,10.0,8.4,9.4,14.4,14.5],
+      note: "上午干得理直气壮，11 点前概率还是个位数。12 点准时变天，<b>13 点一小时灌下 9.6mm</b> 的急雨；傍晚短暂喘口气，23 点再以 <b>94%</b> 封顶收尾。",
+      moments: [
+        {t:"早高峰 07–09 时", v:"16° → 19°", d:"全天最干爽的窗口，出门不用伞，外套穿好。"},
+        {t:"午间 12–14 时", v:"急雨 9.6mm/h", d:"全天雨量的一大半在这一小时下完，能躲就躲。"},
+        {t:"傍晚 17–19 时", v:"概率 63–73%", d:"雨势暂缓但没停，周五晚高峰照样多留时间。"},
+        {t:"夜间 22–24 时", v:"概率冲 94%", d:"最后一波返场，伞和阳台都别松懈。"}
+      ]
+    },
+    tomorrow: {
+      label: "明天 · 10月24日 周六",
+      hi: 20.5, lo: 18.3, uv: 0.4, rainSum: 9.6, rainMax: 100,
+      temp:     [18.3,18.6,18.6,18.3,18.3,18.4,18.5,18.4,18.4,18.5,18.6,19.0,19.5,20.2,20.5,20.3,20.2,20.3,20.0,19.9,20.0,19.7,19.6,19.8],
+      feel:     [19.0,20.2,20.4,19.3,19.4,19.6,19.2,18.8,18.5,18.8,18.6,19.0,19.6,19.8,20.2,20.2,20.8,20.5,20.6,20.4,20.4,20.5,19.9,20.1],
+      prob:     [99,100,100,100,100,100,100,99,98,98,97,94,85,74,63,55,47,43,44,48,49,45,38,33],
+      rainMm:   [0.2,1.5,1.4,1.2,0.2,1.0,0.7,0.5,0.3,0.9,0.9,0.6,0.1,0,0,0,0,0,0,0,0,0,0,0.1],
+      hum:      [96,97,97,98,97,98,97,97,96,96,95,94,89,84,84,85,87,88,91,91,89,90,91,90],
+      wind:     [14.2,8.7,7.4,12.6,11.8,11.5,15.0,16.2,18.1,16.8,19.0,19.5,18.1,21.4,20.9,19.6,15.7,19.0,17.3,16.9,17.1,14.6,18.0,18.0],
+      note: "雨都下在前半场：凌晨到中午概率 <b>100%</b>，全天约 9.6mm；午后一路收尾，23 点只剩 <b>33%</b>——周六的下半场，是从晴天借来的。",
+      moments: [
+        {t:"凌晨 00–06 时", v:"概率 100%", d:"雨下得最密的一段，窗户关严，安心睡。"},
+        {t:"上午 08–11 时", v:"概率 97–98%", d:"出门就是淋雨，户外计划请已挪到下午。"},
+        {t:"下午 14–17 时", v:"概率 47–63% · 渐停", d:"雨势收尾，云层变薄，出门窗口重新打开。"},
+        {t:"夜间 20–24 时", v:"概率 33–49%", d:"基本收官，路面还湿，散步可以，跑鞋再等等。"}
+      ]
+    }
+  };
+  /* ---- live local time, computed in the browser on every open / tick ---- */
+  var WEEK_CN = ["日", "一", "二", "三", "四", "五", "六"];
+  function pad2(n){ return (n < 10 ? "0" : "") + n; }
+  function liveNow(){ return new Date(); }
+  var NOW = liveNow();
+  var NOW_HOUR = NOW.getHours();
+  var NOW_MIN = NOW.getMinutes();
+  var NOW_FRAC = NOW_HOUR + NOW_MIN / 60;
+  function dateLabel(d){
+    return (d.getMonth() + 1) + "月" + d.getDate() + "日 周" + WEEK_CN[d.getDay()];
+  }
+  var calToday = new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate());
+  var calTomorrow = new Date(calToday.getTime() + 24 * 60 * 60 * 1000);
+  DAYS.today.label = "今天 · " + dateLabel(calToday);
+  DAYS.tomorrow.label = "明天 · " + dateLabel(calTomorrow);
+
+  var placeDateEl = document.getElementById("placeDate");
+  var nowClockEl = document.getElementById("nowClockText");
+  function paintClock(){
+    var n = liveNow();
+    NOW = n; NOW_HOUR = n.getHours(); NOW_MIN = n.getMinutes(); NOW_FRAC = NOW_HOUR + NOW_MIN / 60;
+    if (placeDateEl) {
+      placeDateEl.textContent = (n.getMonth() + 1) + "月" + n.getDate() + "日 · 星期" + WEEK_CN[n.getDay()];
+    }
+    if (nowClockEl) {
+      nowClockEl.textContent = "现在 " + pad2(NOW_HOUR) + ":" + pad2(NOW_MIN);
+    }
+    var ht = document.getElementById("heroTemp");
+    var hf = document.getElementById("heroFeel");
+    var hw = document.getElementById("heroWind");
+    var hh = document.getElementById("heroHum");
+    if (ht) ht.textContent = Math.round(DAYS.today.temp[NOW_HOUR]);
+    if (hf) {
+      var diff = Math.round(DAYS.today.temp[NOW_HOUR] - DAYS.today.feel[NOW_HOUR]);
+      hf.textContent = "体感 " + Math.round(DAYS.today.feel[NOW_HOUR]) + "°" +
+        (diff > 0 ? " · 比温度计诚实 " + diff + " 度" : diff < 0 ? " · 比温度计高 " + (-diff) + " 度" : " · 跟温度计一个数");
+    }
+    if (hw) hw.textContent = Math.round(DAYS.today.wind[NOW_HOUR]) + " km/h";
+    if (hh) hh.textContent = DAYS.today.hum[NOW_HOUR] + "%";
+  }
+  paintClock();
+
+  /* ---- ticker ---- */
+  var tickerItems = [
+    "中午 13 点急雨 9.6mm/h，全天雨量一半在那一小时 <i>🌧</i>",
+    "入夜返场，23 点降雨概率 94% <i>☂</i>",
+    "明天周六：雨下在上午，下午收尾 <i>☔</i>",
+    "明天周六不限行，出行自由 <i>🚗</i>",
+    "AQI 86，空气中等 <i>🌫</i>",
+    "17:20 日落，天黑得越来越早 <i>🌇</i>",
+    "周日转干爽，洗晒请候场 <i>🧺</i>"
+  ];
+  var track = document.getElementById("ticker");
+  var half = tickerItems.map(function(s){ return "<span>" + s + "</span>"; }).join("");
+  track.innerHTML = '<div class="ticker-half">' + half + '</div><div class="ticker-half" aria-hidden="true">' + half + "</div>";
+
+  /* ---- raindrops in alert ---- */
+  var fx = document.getElementById("rainFx");
+  var drops = "";
+  for (var i = 0; i < 26; i++) {
+    var left = (i * 37.7) % 100;
+    var delay = (i * 0.37) % 2.4;
+    var dur = 0.9 + ((i * 13) % 7) * 0.12;
+    drops += '<i style="left:' + left.toFixed(1) + '%;animation-delay:' + delay.toFixed(2) + 's;animation-duration:' + dur.toFixed(2) + 's"></i>';
+  }
+  fx.innerHTML = drops;
+
+  /* ---- chart ---- */
+  var W = 760, H = 360, PL = 40, PR = 48, PT = 30, PB = 34;
+  var plotW = W - PL - PR, plotH = H - PT - PB;
+  var barZone = 96;
+  var zoneGap = 16;
+  var chartBox = document.getElementById("chartBox");
+  var readout = document.getElementById("readout");
+  var daySum = document.getElementById("daySum");
+  var hourNote = document.getElementById("hourNote");
+  var momentsBox = document.getElementById("moments");
+  var currentDay = "today";
+  var selHour = NOW_HOUR;
+  var userPicked = false;
+
+  function fmt(n, d){ return n.toFixed(d == null ? 0 : d); }
+
+  function render(dayKey, animate){
+    var d = DAYS[dayKey];
+    var all = d.temp.concat(d.feel);
+    var tMin = Math.floor(Math.min.apply(null, all)) - 1;
+    var tMax = Math.ceil(Math.max.apply(null, all)) + 1;
+    var tempH = plotH - barZone - zoneGap;
+    var rainTop = PT + tempH + zoneGap;
+    var baseY = PT + plotH;
+    function X(h){ return PL + (h / 23) * plotW; }
+    function Y(t){ return PT + (1 - (t - tMin) / (tMax - tMin)) * tempH; }
+    function RY(p){ return baseY - (p / 100) * barZone; }
+    var peakH = 0;
+    for (var pk = 1; pk < 24; pk++) if (d.prob[pk] > d.prob[peakH]) peakH = pk;
+
+    var s = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + d.label + ' 逐小时图：上半部为温度与体感温度（左侧摄氏度刻度），下半部蓝区为降雨概率柱（右侧百分比刻度，0% 到 100%）">';
+    if (selHour >= 0) s += '<rect class="sel-band" x="' + (X(selHour) - plotW / 48) + '" y="' + PT + '" width="' + (plotW / 24) + '" height="' + plotH + '" rx="4"/>';
+    for (var g = 0; g <= 3; g++) {
+      var gt = tMin + (tMax - tMin) * g / 3;
+      var gy = Y(gt);
+      s += '<line class="grid" x1="' + PL + '" y1="' + gy + '" x2="' + (W - PR) + '" y2="' + gy + '"/>';
+      s += '<text class="axis-lab" x="' + (PL - 7) + '" y="' + (gy + 4) + '" text-anchor="end">' + Math.round(gt) + '°</text>';
+    }
+    s += '<rect class="rain-zone" x="' + PL + '" y="' + rainTop + '" width="' + plotW + '" height="' + barZone + '" rx="6"/>';
+    s += '<text class="zone-tag" x="' + (PL + 8) + '" y="' + (rainTop + 16) + '">降雨概率</text>';
+    [0, 50, 100].forEach(function(pv){
+      var ry = RY(pv);
+      if (pv > 0) s += '<line class="rain-grid" x1="' + PL + '" y1="' + ry + '" x2="' + (W - PR) + '" y2="' + ry + '"/>';
+      s += '<text class="rain-lab" x="' + (W - PR + 14) + '" y="' + (ry + 4) + '">' + pv + '%</text>';
+    });
+    s += '<line class="rain-base" x1="' + PL + '" y1="' + baseY + '" x2="' + (W - PR) + '" y2="' + baseY + '"/>';
+    var bw = plotW / 24 * 0.62;
+    for (var h = 0; h < 24; h++) {
+      var bh = (d.prob[h] / 100) * barZone;
+      s += '<rect class="bar' + (d.prob[h] === 0 ? " dry" : "") + (h === selHour && d.prob[h] > 0 ? " sel" : "") + '" x="' + (X(h) - bw / 2) + '" y="' + (baseY - Math.max(bh, 2)) + '" width="' + bw + '" height="' + Math.max(bh, 2) + '" rx="2.5"><title>' + h + ' 时降雨概率 ' + d.prob[h] + '%</title></rect>';
+      if (d.prob[h] > 0 && (h % 3 === 0 || h === peakH)) {
+        s += '<text class="bar-val" x="' + X(h) + '" y="' + (baseY - bh - 5) + '" text-anchor="middle">' + d.prob[h] + '%</text>';
+      }
+    }
+    if (d.rainMax === 0) {
+      s += '<text class="dry-note" x="' + (PL + plotW / 2) + '" y="' + (rainTop + barZone / 2 + 16) + '" text-anchor="middle">全天 0% · 一根雨柱都没有，放心</text>';
+    }
+    if (dayKey === "today") {
+      var nx = X(Math.min(NOW_FRAC, 23));
+      var anchor = NOW_FRAC < 2 ? "start" : (NOW_FRAC > 21 ? "end" : "middle");
+      var tx = NOW_FRAC < 2 ? nx + 4 : (NOW_FRAC > 21 ? nx - 4 : nx);
+      s += '<line class="now-line" x1="' + nx + '" y1="' + PT + '" x2="' + nx + '" y2="' + baseY + '"/>';
+      s += '<text x="' + tx + '" y="' + (PT - 8) + '" text-anchor="' + anchor + '" fill="#e8930c" font-weight="700">现在 ' + pad2(NOW_HOUR) + ':' + pad2(NOW_MIN) + '</text>';
+    }
+    function path(key){
+      return d[key].map(function(v, i){ return (i === 0 ? "M" : "L") + X(i).toFixed(1) + " " + Y(v).toFixed(1); }).join(" ");
+    }
+    s += '<path class="line-f" d="' + path("feel") + '"/>';
+    s += '<path class="line-t" d="' + path("temp") + '"/>';
+    if (selHour >= 0) s += '<text class="pt-val" x="' + X(selHour) + '" y="' + (Y(d.temp[selHour]) - 11) + '" text-anchor="middle">' + fmt(d.temp[selHour], 1) + '°</text>';
+    for (var p = 0; p < 24; p++) {
+      s += '<circle class="pt' + (p === selHour ? " sel" : "") + '" data-h="' + p + '" cx="' + X(p) + '" cy="' + Y(d.temp[p]) + '" r="' + (p === selHour ? 6 : 3.6) + '"/>';
+      s += '<rect class="hit" data-h="' + p + '" x="' + (X(p) - plotW / 48) + '" y="' + PT + '" width="' + (plotW / 24) + '" height="' + plotH + '"><title>' + p + ' 时</title></rect>';
+      if (p % 3 === 0) s += '<text x="' + X(p) + '" y="' + (baseY + 20) + '" text-anchor="middle">' + (p < 10 ? "0" + p : p) + ':00</text>';
+    }
+    s += "</svg>";
+    chartBox.innerHTML = s;
+    if (animate) {
+      chartBox.classList.remove("draw");
+      void chartBox.offsetWidth;
+      chartBox.classList.add("draw");
+    }
+    daySum.innerHTML =
+      "<span>" + d.label + "</span>" +
+      "<span>最高 <b class='num'>" + fmt(d.hi, 1) + "°</b></span>" +
+      "<span>最低 <b class='num'>" + fmt(d.lo, 1) + "°</b></span>" +
+      "<span>紫外线 <b class='num'>" + fmt(d.uv, 1) + "</b></span>" +
+      (d.rainSum > 0
+        ? "<span class='rain-b'>全天雨量 <b class='num'>" + fmt(d.rainSum, 1) + " mm</b> · 最高概率 <b class='num'>" + d.rainMax + "%</b></span>"
+        : "<span>全天雨量 <b class='num'>0 mm</b> · 干爽到底</span>");
+    hourNote.innerHTML = d.note;
+    momentsBox.innerHTML = d.moments.map(function(m){
+      return '<div class="moment"><div class="mt">' + m.t + '</div><div class="mv">' + m.v + '</div><div class="md">' + m.d + "</div></div>";
+    }).join("");
+    updateReadout(dayKey, selHour);
+    var hits = chartBox.querySelectorAll(".hit, .pt");
+    for (var k = 0; k < hits.length; k++) {
+      hits[k].addEventListener("click", function(){
+        selHour = parseInt(this.getAttribute("data-h"), 10);
+        userPicked = true;
+        render(currentDay, false);
+      });
+    }
+  }
+
+  function verdictFor(dayKey, h){
+    var d = DAYS[dayKey], p = d.prob[h];
+    if (p >= 80) return "雨基本板上钉钉，出门请带伞，别赌。";
+    if (p >= 50) return "下雨过半的概率，伞塞包里不亏。";
+    if (p >= 20) return "有点苗头，短途可以赌，长途带伞。";
+    if (p > 0)  return "概率很低，基本可以当它不存在。";
+    return "干得理直气壮，放心出门。";
+  }
+
+  function updateReadout(dayKey, h){
+    var d = DAYS[dayKey];
+    if (h < 0) {
+      readout.innerHTML =
+        '<div class="cell"><div class="k">还没选时间</div><div class="v" style="font-size:16px">点图上任意一个小时，看那一小时的温度、体感和降雨概率</div></div>';
+      hourNote.innerHTML = d.note;
+      return;
+    }
+    readout.innerHTML =
+      '<div class="cell"><div class="k">' + (h < 10 ? "0" + h : h) + ':00 · 温度</div><div class="v num">' + fmt(d.temp[h], 1) + '°</div></div>' +
+      '<div class="cell feel"><div class="k">体感温度</div><div class="v num">' + fmt(d.feel[h], 1) + '°</div></div>' +
+      '<div class="cell rain"><div class="k">降雨概率</div><div class="v num">' + d.prob[h] + '%<small> · ' + fmt(d.rainMm[h], 1) + ' mm</small></div></div>' +
+      '<div class="cell"><div class="k">湿度 / 风速</div><div class="v num">' + d.hum[h] + '%<small> · ' + fmt(d.wind[h], 0) + ' km/h</small></div></div>';
+    hourNote.innerHTML = d.note + " <br/>▸ <b>" + (h < 10 ? "0" + h : h) + ":00 这一个小时：</b>" + verdictFor(dayKey, h);
+  }
+
+  var btnT = document.getElementById("btnToday");
+  var btnM = document.getElementById("btnTomorrow");
+  function setDay(key){
+    currentDay = key;
+    userPicked = false;
+    selHour = key === "today" ? NOW_HOUR : -1;
+    btnT.setAttribute("aria-pressed", key === "today" ? "true" : "false");
+    btnM.setAttribute("aria-pressed", key === "tomorrow" ? "true" : "false");
+    render(key, true);
+  }
+  btnT.addEventListener("click", function(){ setDay("today"); });
+  btnM.addEventListener("click", function(){ setDay("tomorrow"); });
+
+  render("today", true);
+
+  /* ---- sun position (scheme E) ---- */
+  var spDot = document.getElementById("spDot");
+  var spNow = document.getElementById("spNow");
+  var spRail = document.getElementById("spRail");
+  var SUNRISE = 6 + 6 / 60, SUNSET = 17 + 20 / 60;
+  function paintSun(){
+    var p = (NOW_FRAC - SUNRISE) / (SUNSET - SUNRISE);
+    p = Math.max(0, Math.min(1, p));
+    if (spDot) spDot.style.left = "calc(8px + " + p.toFixed(4) + " * (100% - 16px))";
+    if (spNow) {
+      spNow.textContent = "现在 " + pad2(NOW_HOUR) + ":" + pad2(NOW_MIN);
+      if (spRail) {
+        var railW = spRail.clientWidth;
+        if (railW > 0) {
+          var half = spNow.offsetWidth / 2;
+          var cx = p * railW;
+          spNow.style.left = Math.max(half, Math.min(railW - half, cx)) + "px";
+        }
+      }
+    }
+  }
+  paintSun();
+  window.addEventListener("resize", paintSun);
+
+  /* ---- hero sky icon follows the weather ---- */
+  var skyArt = document.getElementById("skyArt");
+  function paintSky(){
+    if (!skyArt) return;
+    var p = DAYS.today.prob[NOW_HOUR];
+    var night = NOW_FRAC < SUNRISE || NOW_FRAC >= SUNSET;
+    var cls = "sky-art";
+    if (p >= 50) cls += " wx-rain";
+    else if (p >= 20) cls += " wx-overcast" + (night ? " wx-night" : "");
+    else if (night) cls += " wx-night";
+    skyArt.setAttribute("class", cls);
+  }
+  paintSky();
+
+  /* ---- keep the clock-derived bits fresh while the page stays open ---- */
+  var lastMin = NOW_MIN, lastHour = NOW_HOUR;
+  setInterval(function(){
+    paintClock();
+    if (NOW_MIN !== lastMin) {
+      var hourChanged = NOW_HOUR !== lastHour;
+      lastMin = NOW_MIN; lastHour = NOW_HOUR;
+      if (hourChanged && !userPicked && currentDay === "today") {
+        selHour = NOW_HOUR;
+      }
+      if (currentDay === "today") render("today", false);
+      paintSun();
+      paintSky();
+    }
+  }, 30000);
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/piixpal@0.4/piixpal.min.js"></script>
+<script>
+  if (window.Piixpal) {
+    Piixpal.sprite('sunpal', {
+      w: 9, h: 9, does: 'crawl',
+      palette: { y: '#ffb020', k: '#8a5c00' },
+      frames: { walk: [[
+        '.y..y..y.',
+        '..yyyyy..',
+        'y.yyyyy.y',
+        '..ykyky..',
+        '.yykkkyy.',
+        '..yyyyy..',
+        'y.yyyyy.y',
+        '..yyyyy..',
+        '.y..y..y.'
+      ]] }
+    });
+  }
+</script>
+</body>
+</html>
