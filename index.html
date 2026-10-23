@@ -421,7 +421,7 @@
 
   <!-- sun path -->
   <section class="panel rise d5" aria-label="日出日落">
-    <div class="panel-head"><h2 class="display">太阳的上下班时间</h2></div>
+    <div class="panel-head"><h2 class="display">太阳的上下班时间<piix-pal pal="sunpal"></piix-pal></h2></div>
     <div class="sun-progress" role="img" aria-label="日出日落大数字排版：日出 06:06，日落 17:20，白昼约 11 小时 14 分；中间细线上的太阳圆点按打开页面的本地时间在日出与日落之间实时定位">
       <div class="sp-row">
         <div class="sp-big">06:06</div>
@@ -438,6 +438,7 @@
   </section>
 
   <!-- checklist -->
+  <piix-pal pal="lurk" on=".check-panel" at=".82"></piix-pal>
   <section class="check-panel rise d6" aria-label="出门清单">
     <h2 class="display">出门前默念一遍</h2>
     <p class="sub">按今天 + 明天的天气排的，照着收包，少挨一次淋。</p>
@@ -449,6 +450,13 @@
       <li><span class="tick">✓</span><span><b>鞋子穿防水的</b>——傍晚雨量上来，布鞋出门，拖鞋回家。</span></li>
       <li><span class="tick warn">!</span><span><b>晚高峰多留时间</b>——周五又撞上下雨，路上只会比平时更堵。</span></li>
     </ul>
+  </section>
+
+  <!-- pixel corner -->
+  <section class="panel rise d6" aria-label="像素角落">
+    <div class="panel-head"><h2 class="display">像素角落 · 路过打个招呼</h2></div>
+    <piix-pal pal="boing" scale="4"></piix-pal>
+    <piix-crowd mode="crowd" count="36" height="170"></piix-crowd>
   </section>
 
 </div>
@@ -804,5 +812,24 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/piixpal@0.4/piixpal.min.js"></script>
+<script>
+  if (window.Piixpal) {
+    Piixpal.sprite('sunpal', {
+      w: 9, h: 9, does: 'crawl',
+      palette: { y: '#ffb020', k: '#8a5c00' },
+      frames: { walk: [[
+        '.y..y..y.',
+        '..yyyyy..',
+        'y.yyyyy.y',
+        '..ykyky..',
+        '.yykkkyy.',
+        '..yyyyy..',
+        'y.yyyyy.y',
+        '..yyyyy..',
+        '.y..y..y.'
+      ]] }
+    });
+  }
+</script>
 </body>
 </html>
