@@ -123,6 +123,23 @@
   .sun-rays{transform-origin:130px 52px;animation:spin 36s linear infinite}
   .cloud-a{animation:drift 7s ease-in-out infinite}
   .cloud-b{animation:drift2 9s ease-in-out infinite}
+  /* weather-linked sky states: JS sets wx-* classes from the current hour's rain probability */
+  #artMoon,#artRain{display:none}
+  .sky-art.wx-night #artSun{display:none}
+  .sky-art.wx-night #artMoon{display:block}
+  .sky-art.wx-rain #artSun,.sky-art.wx-rain #artMoon{display:none}
+  .sky-art.wx-rain #artRain{display:block}
+  .sky-art.wx-overcast #artSun,.sky-art.wx-overcast #artMoon{opacity:.4}
+  .sky-art.wx-overcast .cloud-a{fill:#c2d4ee}
+  .sky-art.wx-overcast .cloud-b{fill:#d3e0f4}
+  .sky-art.wx-rain .cloud-a{fill:#93a9c9}
+  .sky-art.wx-rain .cloud-b{fill:#a7bad6}
+  .sky-art.wx-night .cloud-a{fill:#c3cfe6}
+  .sky-art.wx-night .cloud-b{fill:#d5def0}
+  @keyframes rainfall{0%{transform:translateY(0);opacity:0}18%{opacity:1}82%{opacity:1}100%{transform:translateY(11px);opacity:0}}
+  .drop{stroke:#3f83c8;stroke-width:3;stroke-linecap:round;animation:rainfall .85s linear infinite}
+  @keyframes twinkle{0%,100%{opacity:.35}50%{opacity:1}}
+  .star{fill:#ffd968;animation:twinkle 2.6s ease-in-out infinite}
 
   /* ---------- ticker ---------- */
   .ticker{margin-top:14px;background:var(--ink);color:var(--bg);border-radius:999px;overflow:hidden;
@@ -294,21 +311,37 @@
 
   <!-- hero -->
   <section class="hero rise d2" aria-label="当前天气">
-    <svg class="sky-art" viewBox="0 0 200 150" aria-hidden="true">
-      <g class="sun-rays" stroke="#ffb020" stroke-width="5" stroke-linecap="round">
-        <line x1="130" y1="8" x2="130" y2="20"/><line x1="130" y1="84" x2="130" y2="96"/>
-        <line x1="86" y1="52" x2="98" y2="52"/><line x1="162" y1="52" x2="174" y2="52"/>
-        <line x1="99" y1="21" x2="107" y2="29"/><line x1="153" y1="75" x2="161" y2="83"/>
-        <line x1="161" y1="21" x2="153" y2="29"/><line x1="107" y1="75" x2="99" y2="83"/>
+    <svg class="sky-art" id="skyArt" viewBox="0 0 200 150" aria-hidden="true">
+      <mask id="moonCut"><rect width="200" height="150" fill="#fff"/><circle cx="149" cy="43" r="21" fill="#000"/></mask>
+      <g id="artSun">
+        <g class="sun-rays" stroke="#ffb020" stroke-width="5" stroke-linecap="round">
+          <line x1="130" y1="8" x2="130" y2="20"/><line x1="130" y1="84" x2="130" y2="96"/>
+          <line x1="86" y1="52" x2="98" y2="52"/><line x1="162" y1="52" x2="174" y2="52"/>
+          <line x1="99" y1="21" x2="107" y2="29"/><line x1="153" y1="75" x2="161" y2="83"/>
+          <line x1="161" y1="21" x2="153" y2="29"/><line x1="107" y1="75" x2="99" y2="83"/>
+        </g>
+        <circle cx="130" cy="52" r="24" fill="#ffb020"/>
+        <circle cx="122" cy="48" r="3.2" fill="#8a5c00"/><circle cx="138" cy="48" r="3.2" fill="#8a5c00"/>
+        <path d="M118 60 q12 8 24 0" stroke="#8a5c00" stroke-width="3" fill="none" stroke-linecap="round"/>
       </g>
-      <circle cx="130" cy="52" r="24" fill="#ffb020"/>
-      <circle cx="122" cy="48" r="3.2" fill="#8a5c00"/><circle cx="138" cy="48" r="3.2" fill="#8a5c00"/>
-      <path d="M118 60 q12 8 24 0" stroke="#8a5c00" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <g id="artMoon">
+        <circle cx="134" cy="54" r="24" fill="#f4c95d" mask="url(#moonCut)"/>
+        <circle class="star" cx="86" cy="24" r="2.4"/>
+        <circle class="star" cx="170" cy="14" r="2" style="animation-delay:.7s"/>
+        <circle class="star" cx="102" cy="50" r="1.8" style="animation-delay:1.3s"/>
+      </g>
       <g class="cloud-a" fill="#dbe9ff">
         <ellipse cx="52" cy="106" rx="30" ry="13"/><ellipse cx="72" cy="96" rx="20" ry="12"/>
       </g>
       <g class="cloud-b" fill="#eaf2ff">
         <ellipse cx="150" cy="122" rx="26" ry="11"/><ellipse cx="134" cy="113" rx="16" ry="10"/>
+      </g>
+      <g id="artRain">
+        <line class="drop" x1="40" y1="117" x2="37" y2="126"/>
+        <line class="drop" x1="62" y1="120" x2="59" y2="129" style="animation-delay:.28s"/>
+        <line class="drop" x1="84" y1="115" x2="81" y2="124" style="animation-delay:.55s"/>
+        <line class="drop" x1="136" y1="128" x2="133" y2="137" style="animation-delay:.15s"/>
+        <line class="drop" x1="162" y1="130" x2="159" y2="139" style="animation-delay:.42s"/>
       </g>
     </svg>
     <div class="hero-grid">
@@ -737,6 +770,21 @@
   paintSun();
   window.addEventListener("resize", paintSun); /* re-clamp the label after a reflow */
 
+  /* ---- hero sky icon follows the weather: current hour's baked rain
+         probability + live day/night from the viewer's clock ---- */
+  var skyArt = document.getElementById("skyArt");
+  function paintSky(){
+    if (!skyArt) return;
+    var p = DAYS.today.prob[NOW_HOUR];
+    var night = NOW_FRAC < SUNRISE || NOW_FRAC >= SUNSET;
+    var cls = "sky-art";
+    if (p >= 50) cls += " wx-rain";
+    else if (p >= 20) cls += " wx-overcast" + (night ? " wx-night" : "");
+    else if (night) cls += " wx-night";
+    skyArt.setAttribute("class", cls);
+  }
+  paintSky();
+
   /* ---- keep the clock-derived bits fresh while the page stays open ---- */
   var lastMin = NOW_MIN, lastHour = NOW_HOUR;
   setInterval(function(){
@@ -749,6 +797,7 @@
       }
       if (currentDay === "today") render("today", false);
       paintSun(); /* slide the sun dot along the daylight timeline as minutes pass */
+      paintSky(); /* and re-check the sky icon against the new hour */
     }
   }, 30000);
 })();
