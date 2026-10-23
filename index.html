@@ -303,7 +303,7 @@
 
   <!-- top -->
   <div class="toprow rise d1">
-    <div class="place display">浙江 杭州<small id="placeDate">10月23日 · 星期五</small></div>
+    <div class="place display">浙江 杭州<piix-pal pal="bitbug"></piix-pal><small id="placeDate">10月23日 · 星期五</small></div>
     <div class="spacer"></div>
     <span class="chip live"><span class="dot"></span><span id="nowClockText">现在 --:--</span></span>
     <span class="chip aqi"><span class="dot"></span>AQI 87 · 空气中等，正常活动无妨</span>
@@ -388,6 +388,7 @@
       <span class="ah-l">↑ 上图：温度 °C</span>
       <span class="ah-r">下图：降雨概率 % ↓</span>
     </div>
+    <piix-pal pal="pip" on=".toggle button"></piix-pal>
     <div class="chart-box" id="chartBox"></div>
     <div class="readout" id="readout"></div>
     <p class="hour-note" id="hourNote"></p>
@@ -802,5 +803,6 @@
   }, 30000);
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/piixpal@0.4/piixpal.min.js"></script>
 </body>
 </html>
